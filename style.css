@@ -1,12 +1,45 @@
+/* System monospace fonts (no download needed) give a terminal/HUD feel. */
 body {
-  font-family: sans-serif;
+  font-family: ui-monospace, "Cascadia Code", "Roboto Mono", Menlo, Consolas, monospace;
   text-align: center;
-  background: #222;
-  color: #eee;
+  background: #0b0e14;
+  color: #d7dde5;
+}
+
+h1 {
+  color: #00e5ff;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  text-shadow: 0 0 8px rgba(0, 229, 255, 0.6); /* neon glow */
 }
 
 canvas {
-  background: #fff;
-  border: 2px solid #555;
+  background: #1c212b;
+  border: 2px solid #00e5ff;
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.4); /* neon glow around the grid */
   cursor: pointer;
+}
+
+/* --- Legend --- */
+/* Swatch colors here must match the fill colors used in script.js's draw(). */
+.legend {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.legend-swatch {
+  width: 16px;
+  height: 16px;
+  border: 1px solid #444;
+  display: inline-block;
 }

@@ -30,18 +30,19 @@ function draw() {
       const x = col * CELL_SIZE;
       const y = row * CELL_SIZE;
 
+      // These colors match the legend in index.html — keep them in sync.
       if (grid[row][col]) {
-        ctx.fillStyle = "#333"; // wall
+        ctx.fillStyle = "#f0f0f0"; // wall, almost-white
       } else if (row === START.row && col === START.col) {
-        ctx.fillStyle = "#b6f2b6"; // start cell, light green
+        ctx.fillStyle = "#39ff88"; // start cell, neon green
       } else if (row === END.row && col === END.col) {
-        ctx.fillStyle = "#f2d98a"; // end cell, gold
+        ctx.fillStyle = "#ffcc33"; // end cell, neon gold
       } else {
-        ctx.fillStyle = "#fff";
+        ctx.fillStyle = "#1c212b"; // open path
       }
       ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
 
-      ctx.strokeStyle = "#ccc";
+      ctx.strokeStyle = "#2f3542";
       ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
     }
   }
@@ -49,7 +50,7 @@ function draw() {
   // Draw the robot as a circle centered in its current cell.
   const centerX = robot.col * CELL_SIZE + CELL_SIZE / 2;
   const centerY = robot.row * CELL_SIZE + CELL_SIZE / 2;
-  ctx.fillStyle = "#2b6fe0";
+  ctx.fillStyle = "#ff2fd0"; // hot pink — picked to contrast against the green start cell
   ctx.beginPath();
   ctx.arc(centerX, centerY, CELL_SIZE / 3, 0, Math.PI * 2);
   ctx.fill();
