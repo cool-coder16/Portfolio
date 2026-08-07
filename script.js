@@ -245,6 +245,12 @@ function computeShortestPath() {
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+  // lineWidth is part of the canvas's shared state, and later drawing (the
+  // robot's rim stroke, the sensor lines) leaves it changed — without
+  // resetting it here, the grid borders below would inherit whatever
+  // thickness the previous frame's drawing left behind.
+  ctx.lineWidth = 1;
+
   for (let row = 0; row < GRID_SIZE; row++) {
     for (let col = 0; col < GRID_SIZE; col++) {
       const x = col * CELL_SIZE;
