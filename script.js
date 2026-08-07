@@ -22,6 +22,36 @@ const START = { row: 0, col: 0 };
 const END = { row: GRID_SIZE - 1, col: GRID_SIZE - 1 };
 const robot = { row: START.row, col: START.col };
 
+// The row/col change each direction causes.
+const DELTAS = {
+  up: { row: -1, col: 0 },
+  down: { row: 1, col: 0 },
+  left: { row: 0, col: -1 },
+  right: { row: 0, col: 1 },
+};
+
+// A real robot doesn't know compass directions — it only knows what's in
+// front of it, to its left, and to its right. So we track which way the
+// robot is currently facing, and figure out "front/left/right" from that.
+let heading = "right";
+
+// Clockwise order, used to rotate a direction left (-1) or right (+1).
+const DIR_ORDER = ["up", "right", "down", "left"];
+function rotate(dir, steps) {
+  const index = DIR_ORDER.indexOf(dir);
+  return DIR_ORDER[(index + steps + DIR_ORDER.length) % DIR_ORDER.length];
+}
+
+// True if there's a wall (or the edge of the grid) one cell away from the
+// robot, in the given direction.
+function hasWall(dir) {
+  const delta = DELTAS[dir];
+  const row = robot.row + delta.row;
+  const col = robot.col + delta.col;
+  const inBounds = row >= 0 && row < GRID_SIZE && col >= 0 && col < GRID_SIZE;
+  return !inBounds || grid[row][col];
+}
+
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -34,7 +64,7 @@ function draw() {
       if (grid[row][col]) {
         ctx.fillStyle = "#f0f0f0"; // wall, almost-white
       } else if (row === START.row && col === START.col) {
-        ctx.fillStyle = "#39ff88"; // start cell, neon green
+        ctx.fillStyle = "#3aa0ff"; // start cell, neon blue (not green — keeps the green "clear" sensor line visible here)
       } else if (row === END.row && col === END.col) {
         ctx.fillStyle = "#ffcc33"; // end cell, neon gold
       } else {
@@ -47,13 +77,66 @@ function draw() {
     }
   }
 
-  // Draw the robot as a circle centered in its current cell.
+  // Draw the robot as a triangle pointing in the direction it's facing —
+  // an arrow makes `heading` visible at a glance, instead of a plain circle
+  // that looks the same no matter which way the robot is turned.
   const centerX = robot.col * CELL_SIZE + CELL_SIZE / 2;
   const centerY = robot.row * CELL_SIZE + CELL_SIZE / 2;
-  ctx.fillStyle = "#ff2fd0"; // hot pink — picked to contrast against the green start cell
+  drawRobotArrow(centerX, centerY);
+
+  drawSensors(centerX, centerY);
+}
+
+function drawRobotArrow(centerX, centerY) {
+  // DIR_ORDER is already clockwise (up, right, down, left), so each step
+  // through it is a 90-degree clockwise turn — same trick rotate() uses.
+  const angle = (DIR_ORDER.indexOf(heading) * Math.PI) / 2;
+  const size = CELL_SIZE / 2.2;
+
+  ctx.save();
+  ctx.translate(centerX, centerY);
+  ctx.rotate(angle); // rotates the triangle below (drawn pointing "up") to face `heading`
+
+  ctx.fillStyle = "#ff2fd0"; // hot pink — picked to contrast against the blue start cell
   ctx.beginPath();
-  ctx.arc(centerX, centerY, CELL_SIZE / 3, 0, Math.PI * 2);
+  ctx.moveTo(0, -size); // tip
+  ctx.lineTo(size * 0.6, size * 0.6); // back-right corner
+  ctx.lineTo(-size * 0.6, size * 0.6); // back-left corner
+  ctx.closePath();
   ctx.fill();
+
+  ctx.restore();
+}
+
+// Draws a short line from the robot toward each of its 3 sensor directions
+// (front/left/right, relative to `heading`), colored by what it detects.
+function drawSensors(centerX, centerY) {
+  const sensors = {
+    front: hasWall(heading),
+    left: hasWall(rotate(heading, -1)),
+    right: hasWall(rotate(heading, 1)),
+  };
+
+  const lineLength = CELL_SIZE * 0.6;
+  ctx.lineWidth = 3;
+
+  for (const [label, dir] of [
+    ["front", heading],
+    ["left", rotate(heading, -1)],
+    ["right", rotate(heading, 1)],
+  ]) {
+    const delta = DELTAS[dir];
+    ctx.strokeStyle = sensors[label] ? "#ff3b3b" : "#39ff88"; // red = wall, green = clear
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY);
+    ctx.lineTo(centerX + delta.col * lineLength, centerY + delta.row * lineLength);
+    ctx.stroke();
+  }
+
+  // Text readout, so the exact sensor state is readable, not just visual.
+  const describe = (isWall) => (isWall ? "WALL" : "clear");
+  document.getElementById("sensorReadout").textContent =
+    `Front: ${describe(sensors.front)}  |  Left: ${describe(sensors.left)}  |  Right: ${describe(sensors.right)}`;
 }
 
 canvas.addEventListener("click", (event) => {
@@ -77,30 +160,32 @@ canvas.addEventListener("click", (event) => {
 });
 
 // --- Manual driving ---
-// Maps each arrow key to the row/col change it causes.
-const MOVES = {
-  ArrowUp: { row: -1, col: 0 },
-  ArrowDown: { row: 1, col: 0 },
-  ArrowLeft: { row: 0, col: -1 },
-  ArrowRight: { row: 0, col: 1 },
+// Maps each arrow key to the direction it represents.
+const KEY_TO_DIR = {
+  ArrowUp: "up",
+  ArrowDown: "down",
+  ArrowLeft: "left",
+  ArrowRight: "right",
 };
 
 document.addEventListener("keydown", (event) => {
-  const move = MOVES[event.key];
-  if (!move) return; // not an arrow key, ignore
+  const dir = KEY_TO_DIR[event.key];
+  if (!dir) return; // not an arrow key, ignore
 
   // Arrow keys scroll the page by default — stop that so driving feels normal.
   event.preventDefault();
 
-  const newRow = robot.row + move.row;
-  const newCol = robot.col + move.col;
+  // Pressing a direction always turns the robot to face it, even if a wall
+  // blocks the move — that's what lets you "look" at a wall and see the
+  // front sensor go red without needing to move into it.
+  heading = dir;
 
-  const inBounds =
-    newRow >= 0 && newRow < GRID_SIZE && newCol >= 0 && newCol < GRID_SIZE;
-  if (!inBounds || grid[newRow][newCol]) return; // wall or edge of grid blocks movement
+  if (!hasWall(dir)) {
+    const delta = DELTAS[dir];
+    robot.row += delta.row;
+    robot.col += delta.col;
+  }
 
-  robot.row = newRow;
-  robot.col = newCol;
   draw();
 });
 

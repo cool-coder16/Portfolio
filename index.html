@@ -7,15 +7,19 @@
 </head>
 <body>
   <h1>Maze Robot Simulator</h1>
-  <p>Click cells to add or remove walls. Use arrow keys to drive the robot from green (start) to gold (end).</p>
+  <p>Click cells to add or remove walls. Use arrow keys to drive the robot from blue (start) to gold (end).</p>
 
   <canvas id="mazeCanvas"></canvas>
 
+  <p id="sensorReadout" class="readout"></p>
+
   <div class="legend">
     <div class="legend-item"><span class="legend-swatch" style="background:#f0f0f0;"></span>Wall</div>
-    <div class="legend-item"><span class="legend-swatch" style="background:#39ff88;"></span>Start</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#3aa0ff;"></span>Start</div>
     <div class="legend-item"><span class="legend-swatch" style="background:#ffcc33;"></span>End</div>
     <div class="legend-item"><span class="legend-swatch" style="background:#ff2fd0;"></span>Robot</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#39ff88;"></span>Sensor: clear</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#ff3b3b;"></span>Sensor: wall</div>
   </div>
 
   <script src="script.js"></script>

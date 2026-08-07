@@ -20,6 +20,12 @@ canvas {
   cursor: pointer;
 }
 
+.readout {
+  font-size: 16px;
+  letter-spacing: 1px;
+  margin-top: 12px;
+}
+
 /* --- Legend --- */
 /* Swatch colors here must match the fill colors used in script.js's draw(). */
 .legend {
