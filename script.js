@@ -35,6 +35,51 @@ const DELTAS = {
 // robot is currently facing, and figure out "front/left/right" from that.
 let heading = "right";
 
+// --- Move trail ---
+// A fading trail of small rectangles spanning the whole gap between the
+// robot's old cell and its new one — like the arrow itself had an alpha
+// and was animated sliding across, then left as a streak that fades out.
+const TRAIL_FADE_MS = 250; // faster fade
+const TRAIL_MAX_OPACITY = 0.5; // lighter — never fully solid red
+const TRAIL_RECT_SIZE = CELL_SIZE * 0.5;
+const TRAIL_POINTS = 24; // how many rectangles make up one streak — more = smoother
+let trail = []; // each entry: { x, y, startTime } — x/y are pixel positions, not grid cells
+let trailAnimating = false; // true while a requestAnimationFrame loop is fading the trail
+
+// Lays down a row of rectangles along the straight line from (x1,y1) to
+// (x2,y2) — the old and new centers of the robot — all starting at full
+// opacity and fading together.
+function addTrailStreak(x1, y1, x2, y2) {
+  const startTime = Date.now();
+  for (let i = 0; i <= TRAIL_POINTS; i++) {
+    const t = i / TRAIL_POINTS;
+    trail.push({
+      x: x1 + (x2 - x1) * t,
+      y: y1 + (y2 - y1) * t,
+      startTime,
+    });
+  }
+  if (!trailAnimating) {
+    trailAnimating = true;
+    requestAnimationFrame(animateTrail);
+  }
+}
+
+// Runs once per frame only while the trail has something left to fade —
+// stops itself once trail is empty, instead of running forever in the
+// background.
+function animateTrail() {
+  const now = Date.now();
+  trail = trail.filter((mark) => now - mark.startTime < TRAIL_FADE_MS);
+  draw();
+
+  if (trail.length > 0) {
+    requestAnimationFrame(animateTrail);
+  } else {
+    trailAnimating = false;
+  }
+}
+
 // Clockwise order, used to rotate a direction left (-1) or right (+1).
 const DIR_ORDER = ["up", "right", "down", "left"];
 function rotate(dir, steps) {
@@ -77,6 +122,8 @@ function draw() {
     }
   }
 
+  drawTrail();
+
   // Draw the robot as a triangle pointing in the direction it's facing —
   // an arrow makes `heading` visible at a glance, instead of a plain circle
   // that looks the same no matter which way the robot is turned.
@@ -87,25 +134,59 @@ function draw() {
   drawSensors(centerX, centerY);
 }
 
-function drawRobotArrow(centerX, centerY) {
+// Draws the robot's arrow shape at any position/heading/fill — shared by
+// the real robot (opaque, glowing) and the fading trail ghosts (translucent).
+function drawArrowShape(centerX, centerY, dir, fillStyle, strokeStyle) {
   // DIR_ORDER is already clockwise (up, right, down, left), so each step
   // through it is a 90-degree clockwise turn — same trick rotate() uses.
-  const angle = (DIR_ORDER.indexOf(heading) * Math.PI) / 2;
+  const angle = (DIR_ORDER.indexOf(dir) * Math.PI) / 2;
   const size = CELL_SIZE / 2.2;
 
   ctx.save();
   ctx.translate(centerX, centerY);
-  ctx.rotate(angle); // rotates the triangle below (drawn pointing "up") to face `heading`
+  ctx.rotate(angle); // rotates the triangle below (drawn pointing "up") to face `dir`
 
-  ctx.fillStyle = "#ff2fd0"; // hot pink — picked to contrast against the blue start cell
   ctx.beginPath();
   ctx.moveTo(0, -size); // tip
   ctx.lineTo(size * 0.6, size * 0.6); // back-right corner
   ctx.lineTo(-size * 0.6, size * 0.6); // back-left corner
   ctx.closePath();
+
+  ctx.fillStyle = fillStyle;
   ctx.fill();
 
+  if (strokeStyle) {
+    ctx.strokeStyle = strokeStyle;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
   ctx.restore();
+}
+
+// Paints each trail rectangle, fading out (an alpha added to the highlight
+// red) the older it gets. Runs every animation frame while the trail is active.
+function drawTrail() {
+  const now = Date.now();
+  for (const mark of trail) {
+    const age = now - mark.startTime;
+    const opacity = Math.max(0, 1 - age / TRAIL_FADE_MS) * TRAIL_MAX_OPACITY;
+    ctx.fillStyle = `rgba(255, 59, 59, ${opacity})`;
+    ctx.fillRect(
+      mark.x - TRAIL_RECT_SIZE / 2,
+      mark.y - TRAIL_RECT_SIZE / 2,
+      TRAIL_RECT_SIZE,
+      TRAIL_RECT_SIZE
+    );
+  }
+}
+
+function drawRobotArrow(centerX, centerY) {
+  // A red glow + rim around the arrow — the "highlight".
+  ctx.shadowColor = "#ff3b3b";
+  ctx.shadowBlur = 10;
+  drawArrowShape(centerX, centerY, heading, "#ffffff", "#ff3b3b");
+  ctx.shadowBlur = 0; // reset so it doesn't bleed into the sensor lines drawn next
 }
 
 // Draws a short line from the robot toward each of its 3 sensor directions
@@ -117,7 +198,7 @@ function drawSensors(centerX, centerY) {
     right: hasWall(rotate(heading, 1)),
   };
 
-  const lineLength = CELL_SIZE * 0.6;
+  const lineLength = CELL_SIZE * 0.4;
   ctx.lineWidth = 3;
 
   for (const [label, dir] of [
@@ -181,9 +262,16 @@ document.addEventListener("keydown", (event) => {
   heading = dir;
 
   if (!hasWall(dir)) {
+    const oldCenterX = robot.col * CELL_SIZE + CELL_SIZE / 2;
+    const oldCenterY = robot.row * CELL_SIZE + CELL_SIZE / 2;
+
     const delta = DELTAS[dir];
     robot.row += delta.row;
     robot.col += delta.col;
+
+    const newCenterX = robot.col * CELL_SIZE + CELL_SIZE / 2;
+    const newCenterY = robot.row * CELL_SIZE + CELL_SIZE / 2;
+    addTrailStreak(oldCenterX, oldCenterY, newCenterX, newCenterY);
   }
 
   draw();
