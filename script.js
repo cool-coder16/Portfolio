@@ -12,7 +12,7 @@ canvas.height = GRID_SIZE * CELL_SIZE;
 
 // Build a GRID_SIZE x GRID_SIZE grid, every cell starts as "no wall" (false).
 const grid = Array.from({ length: GRID_SIZE }, () =>
-  Array(GRID_SIZE).fill(false)
+  Array(GRID_SIZE).fill(false),
 );
 
 // --- Robot setup ---
@@ -97,6 +97,34 @@ function hasWall(dir) {
   return !inBounds || grid[row][col];
 }
 
+// The robot's 3 sensor readings, relative to its current heading.
+function getSensors() {
+  return {
+    front: hasWall(heading),
+    left: hasWall(rotate(heading, -1)),
+    right: hasWall(rotate(heading, 1)),
+  };
+}
+
+// Moves the robot one cell in the direction it's currently facing, and
+// leaves a trail streak behind it. Shared by manual arrow-key driving and
+// the auto-solver, so both move the exact same way. Does nothing if a wall
+// blocks the way.
+function moveForward() {
+  if (hasWall(heading)) return;
+
+  const oldCenterX = robot.col * CELL_SIZE + CELL_SIZE / 2;
+  const oldCenterY = robot.row * CELL_SIZE + CELL_SIZE / 2;
+
+  const delta = DELTAS[heading];
+  robot.row += delta.row;
+  robot.col += delta.col;
+
+  const newCenterX = robot.col * CELL_SIZE + CELL_SIZE / 2;
+  const newCenterY = robot.row * CELL_SIZE + CELL_SIZE / 2;
+  addTrailStreak(oldCenterX, oldCenterY, newCenterX, newCenterY);
+}
+
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -176,7 +204,7 @@ function drawTrail() {
       mark.x - TRAIL_RECT_SIZE / 2,
       mark.y - TRAIL_RECT_SIZE / 2,
       TRAIL_RECT_SIZE,
-      TRAIL_RECT_SIZE
+      TRAIL_RECT_SIZE,
     );
   }
 }
@@ -192,11 +220,7 @@ function drawRobotArrow(centerX, centerY) {
 // Draws a short line from the robot toward each of its 3 sensor directions
 // (front/left/right, relative to `heading`), colored by what it detects.
 function drawSensors(centerX, centerY) {
-  const sensors = {
-    front: hasWall(heading),
-    left: hasWall(rotate(heading, -1)),
-    right: hasWall(rotate(heading, 1)),
-  };
+  const sensors = getSensors();
 
   const lineLength = CELL_SIZE * 0.4;
   ctx.lineWidth = 3;
@@ -210,7 +234,10 @@ function drawSensors(centerX, centerY) {
     ctx.strokeStyle = sensors[label] ? "#ff3b3b" : "#39ff88"; // red = wall, green = clear
     ctx.beginPath();
     ctx.moveTo(centerX, centerY);
-    ctx.lineTo(centerX + delta.col * lineLength, centerY + delta.row * lineLength);
+    ctx.lineTo(
+      centerX + delta.col * lineLength,
+      centerY + delta.row * lineLength,
+    );
     ctx.stroke();
   }
 
@@ -252,6 +279,7 @@ const KEY_TO_DIR = {
 document.addEventListener("keydown", (event) => {
   const dir = KEY_TO_DIR[event.key];
   if (!dir) return; // not an arrow key, ignore
+  if (solving) return; // don't let manual driving fight with the auto-solver
 
   // Arrow keys scroll the page by default — stop that so driving feels normal.
   event.preventDefault();
@@ -260,21 +288,110 @@ document.addEventListener("keydown", (event) => {
   // blocks the move — that's what lets you "look" at a wall and see the
   // front sensor go red without needing to move into it.
   heading = dir;
+  moveForward();
+  draw();
+});
 
-  if (!hasWall(dir)) {
-    const oldCenterX = robot.col * CELL_SIZE + CELL_SIZE / 2;
-    const oldCenterY = robot.row * CELL_SIZE + CELL_SIZE / 2;
+// --- Day 4: YOUR wall-following algorithm ---
+// This is the one function you write yourself. Every step, the auto-solver
+// calls it with the robot's current sensor readings and does whatever it
+// returns. That's the whole game: the robot can only ever see what's
+// immediately front/left/right of it — never the whole maze — same as a
+// real one would.
+//
+// A classic strategy is "always keep a wall on your right hand" — at every
+// step:
+//   1. If there's NO wall to your right  -> turn right.
+//   2. Else if there's NO wall in front  -> go forward.
+//   3. Else if there's NO wall to your left -> turn left.
+//   4. Else (walls on all 3 sides)       -> turn all the way around.
+//
+// Turning right/left also immediately steps into that direction if it's
+// open — same as a real robot hugging a wall would: it doesn't turn and
+// then pause to think again, it turns into the opening and keeps going.
+// `turnAround` is the exception — you haven't sensed what's behind you, so
+// it only turns; the next call senses the new front before deciding to move.
+//
+// `sensors` looks like { front: true, left: false, right: true } — true
+// means "wall present". Return exactly one of these strings:
+//   "forward"    — drive into the cell you're facing
+//   "left"       — turn 90° left, then step forward if that's now open
+//   "right"      — turn 90° right, then step forward if that's now open
+//   "turnAround" — turn 180°, don't move
+function chooseNextAction(sensors) {
+  if (!sensors.right) {
+    return "right";
+  } else if (!sensors.front) {
+    return "forward";
+  } else if (!sensors.left) {
+    return "left";
+  } else {
+    return "turnAround";
+  }
+}
 
-    const delta = DELTAS[dir];
-    robot.row += delta.row;
-    robot.col += delta.col;
+// --- Auto-solve loop ---
+// Turns chooseNextAction()'s answer into an actual robot movement.
+function applyAction(action) {
+  if (action === "left" || action === "right") {
+    heading = rotate(heading, action === "left" ? -1 : 1);
+    moveForward(); // no-ops safely if it turns out not to be open after all
+  } else if (action === "turnAround") {
+    heading = rotate(heading, 2);
+  } else if (action === "forward") {
+    moveForward();
+  }
+}
 
-    const newCenterX = robot.col * CELL_SIZE + CELL_SIZE / 2;
-    const newCenterY = robot.row * CELL_SIZE + CELL_SIZE / 2;
-    addTrailStreak(oldCenterX, oldCenterY, newCenterX, newCenterY);
+const SOLVE_STEP_DELAY_MS = 200; // pause between steps, so you can watch it think
+const MAX_SOLVE_STEPS = 500; // safety net against an infinite loop in a buggy algorithm
+
+let solving = false;
+let solveStepCount = 0;
+let solveTimeoutId = null;
+const solveButton = document.getElementById("solveButton");
+
+function autoSolveStep() {
+  if (robot.row === END.row && robot.col === END.col) {
+    document.getElementById("sensorReadout").textContent =
+      `Solved in ${solveStepCount} steps!`;
+    stopSolving();
+    return;
   }
 
+  if (solveStepCount >= MAX_SOLVE_STEPS) {
+    document.getElementById("sensorReadout").textContent =
+      `Stopped after ${MAX_SOLVE_STEPS} steps without reaching the end — check chooseNextAction().`;
+    stopSolving();
+    return;
+  }
+
+  applyAction(chooseNextAction(getSensors()));
   draw();
+  solveStepCount++;
+
+  solveTimeoutId = setTimeout(autoSolveStep, SOLVE_STEP_DELAY_MS);
+}
+
+function startSolving() {
+  solving = true;
+  solveStepCount = 0;
+  solveButton.textContent = "Stop";
+  autoSolveStep();
+}
+
+function stopSolving() {
+  solving = false;
+  clearTimeout(solveTimeoutId);
+  solveButton.textContent = "Solve";
+}
+
+solveButton.addEventListener("click", () => {
+  if (solving) {
+    stopSolving();
+  } else {
+    startSolving();
+  }
 });
 
 draw();

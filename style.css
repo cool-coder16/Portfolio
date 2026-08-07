@@ -26,6 +26,24 @@ canvas {
   margin-top: 12px;
 }
 
+.btn {
+  font-family: inherit;
+  font-size: 15px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #00e5ff;
+  background: transparent;
+  border: 2px solid #00e5ff;
+  border-radius: 4px;
+  padding: 8px 20px;
+  margin-top: 12px;
+  cursor: pointer;
+}
+
+.btn:hover {
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+}
+
 /* --- Legend --- */
 /* Swatch colors here must match the fill colors used in script.js's draw(). */
 .legend {
