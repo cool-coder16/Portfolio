@@ -26,6 +26,29 @@ canvas {
   margin-top: 12px;
 }
 
+/* Shown briefly when the robot reaches the end cell. */
+.readout.solved {
+  color: #ffcc33;
+  text-shadow: 0 0 10px rgba(255, 204, 51, 0.8);
+  animation: solved-pulse 0.5s ease-in-out 2;
+}
+
+@keyframes solved-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+}
+
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .btn {
   font-family: inherit;
   font-size: 15px;

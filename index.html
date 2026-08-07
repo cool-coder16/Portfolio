@@ -13,7 +13,11 @@
 
   <p id="sensorReadout" class="readout"></p>
 
-  <button id="solveButton" class="btn">Solve</button>
+  <div class="controls">
+    <button id="solveButton" class="btn">Solve</button>
+    <button id="resetButton" class="btn">Reset</button>
+    <button id="randomizeButton" class="btn">Randomize Maze</button>
+  </div>
 
   <div class="legend">
     <div class="legend-item"><span class="legend-swatch" style="background:#f0f0f0;"></span>Wall</div>
@@ -22,6 +26,8 @@
     <div class="legend-item"><span class="legend-swatch" style="background:#ffffff;"></span>Robot</div>
     <div class="legend-item"><span class="legend-swatch" style="background:#39ff88;"></span>Sensor: clear</div>
     <div class="legend-item"><span class="legend-swatch" style="background:#ff3b3b;"></span>Sensor: wall</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#ffcc33;"></span>Actual path taken</div>
+    <div class="legend-item"><span class="legend-swatch" style="background:#3aa0ff;"></span>Shortest path</div>
   </div>
 
   <script src="script.js"></script>
