@@ -6,28 +6,61 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Maze Robot Simulator</h1>
-  <p>Click cells to add or remove walls. Use arrow keys to drive the robot from blue (start) to gold (end).</p>
+  <div class="page">
+    <main>
+      <h1>Maze Robot Simulator</h1>
+      <p>Click cells to add or remove walls. Use arrow keys to drive the robot from start to end.</p>
 
-  <canvas id="mazeCanvas"></canvas>
+      <canvas id="mazeCanvas"></canvas>
 
-  <p id="sensorReadout" class="readout"></p>
+      <p id="sensorReadout" class="readout"></p>
 
-  <div class="controls">
-    <button id="solveButton" class="btn">Solve</button>
-    <button id="resetButton" class="btn">Reset</button>
-    <button id="randomizeButton" class="btn">Randomize Maze</button>
-  </div>
+      <div class="controls">
+        <button id="solveButton" class="btn">Solve</button>
+        <button id="resetButton" class="btn">Reset Robot</button>
+        <button id="resetMazeButton" class="btn">Reset Maze</button>
+        <button id="randomizeButton" class="btn">Randomize Maze</button>
+      </div>
+    </main>
 
-  <div class="legend">
-    <div class="legend-item"><span class="legend-swatch" style="background:#f0f0f0;"></span>Wall</div>
-    <div class="legend-item"><span class="legend-swatch" style="background:#3aa0ff;"></span>Start</div>
-    <div class="legend-item"><span class="legend-swatch" style="background:#ffcc33;"></span>End</div>
-    <div class="legend-item"><span class="legend-swatch" style="background:#ffffff;"></span>Robot</div>
-    <div class="legend-item"><span class="legend-swatch" style="background:#39ff88;"></span>Sensor: clear</div>
-    <div class="legend-item"><span class="legend-swatch" style="background:#ff3b3b;"></span>Sensor: wall</div>
-    <div class="legend-item"><span class="legend-swatch" style="background:#ffcc33;"></span>Actual path taken</div>
-    <div class="legend-item"><span class="legend-swatch" style="background:#3aa0ff;"></span>Shortest path</div>
+    <aside class="legend">
+      <h2>Colors</h2>
+
+      <label class="legend-item">
+        <input type="color" class="legend-swatch" id="color-wall" value="#f0f0f0">
+        Wall
+      </label>
+      <label class="legend-item">
+        <input type="color" class="legend-swatch" id="color-start" value="#3aa0ff">
+        Start
+      </label>
+      <label class="legend-item">
+        <input type="color" class="legend-swatch" id="color-end" value="#ffcc33">
+        End
+      </label>
+      <label class="legend-item">
+        <input type="color" class="legend-swatch" id="color-robot" value="#ffffff">
+        Robot
+      </label>
+      <label class="legend-item">
+        <input type="color" class="legend-swatch" id="color-sensor-clear" value="#39ff88">
+        Sensor: clear
+      </label>
+      <label class="legend-item">
+        <input type="color" class="legend-swatch" id="color-sensor-wall" value="#ff3b3b">
+        Sensor: wall
+      </label>
+      <label class="legend-item">
+        <input type="color" class="legend-swatch" id="color-actual-path" value="#ffcc33">
+        Actual path taken
+      </label>
+      <label class="legend-item">
+        <input type="color" class="legend-swatch" id="color-shortest-path" value="#3aa0ff">
+        Shortest path
+      </label>
+
+      <button id="resetColorsButton" class="btn">Reset All Colors</button>
+    </aside>
   </div>
 
   <script src="script.js"></script>

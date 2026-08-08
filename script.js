@@ -10,6 +10,24 @@ const ctx = canvas.getContext("2d");
 canvas.width = GRID_SIZE * CELL_SIZE;
 canvas.height = GRID_SIZE * CELL_SIZE;
 
+// --- Customizable colors ---
+// Every color a legend swatch controls, in one place. DEFAULT_COLORS is a
+// frozen copy of the original palette so "Reset All Colors" has something
+// to restore; `colors` is the live, editable copy everything else reads
+// from. Colors NOT in this list (the dark path background, grid lines, the
+// robot's red glow) are deliberately fixed, not exposed for editing.
+const DEFAULT_COLORS = {
+  wall: "#f0f0f0",
+  start: "#3aa0ff",
+  end: "#ffcc33",
+  robot: "#ffffff",
+  sensorClear: "#39ff88",
+  sensorWall: "#ff3b3b",
+  actualPath: "#ffcc33",
+  shortestPath: "#3aa0ff",
+};
+const colors = { ...DEFAULT_COLORS };
+
 // Build a GRID_SIZE x GRID_SIZE grid, every cell starts as "no wall" (false).
 const grid = Array.from({ length: GRID_SIZE }, () =>
   Array(GRID_SIZE).fill(false),
@@ -256,13 +274,14 @@ function draw() {
       const x = col * CELL_SIZE;
       const y = row * CELL_SIZE;
 
-      // These colors match the legend in index.html — keep them in sync.
+      // Wall/start/end colors are user-customizable (see the `colors`
+      // object above and the sidebar color pickers); open path stays fixed.
       if (grid[row][col]) {
-        ctx.fillStyle = "#f0f0f0"; // wall, almost-white
+        ctx.fillStyle = colors.wall;
       } else if (row === START.row && col === START.col) {
-        ctx.fillStyle = "#3aa0ff"; // start cell, neon blue (not green — keeps the green "clear" sensor line visible here)
+        ctx.fillStyle = colors.start;
       } else if (row === END.row && col === END.col) {
-        ctx.fillStyle = "#ffcc33"; // end cell, neon gold
+        ctx.fillStyle = colors.end;
       } else {
         ctx.fillStyle = "#1c212b"; // open path
       }
@@ -302,14 +321,18 @@ function drawSolutionPaths() {
     uniqueCells.set(`${cell.row},${cell.col}`, cell);
   }
 
+  // globalAlpha (rather than baking alpha into an rgba string) lets this
+  // stay translucent no matter what hex color the user picks.
+  ctx.fillStyle = colors.actualPath;
+  ctx.globalAlpha = 0.5;
   for (const cell of uniqueCells.values()) {
-    ctx.fillStyle = "rgba(255, 204, 51, 0.5)";
     ctx.fillRect(cell.col * CELL_SIZE, cell.row * CELL_SIZE, CELL_SIZE, CELL_SIZE);
   }
+  ctx.globalAlpha = 1; // reset so nothing drawn after this is accidentally translucent
 
   const inset = CELL_SIZE * 0.3;
   for (const cell of shortestPath) {
-    ctx.fillStyle = "#3aa0ff";
+    ctx.fillStyle = colors.shortestPath;
     ctx.fillRect(
       cell.col * CELL_SIZE + inset,
       cell.row * CELL_SIZE + inset,
@@ -409,10 +432,11 @@ function drawTrail() {
 }
 
 function drawRobotArrow(centerX, centerY) {
-  // A red glow + rim around the arrow — the "highlight".
+  // The fill is user-customizable (colors.robot); the red glow + rim
+  // "highlight" is a fixed style choice, not tied to any legend swatch.
   ctx.shadowColor = "#ff3b3b";
   ctx.shadowBlur = 10;
-  drawArrowShape(centerX, centerY, heading, "#ffffff", "#ff3b3b");
+  drawArrowShape(centerX, centerY, heading, colors.robot, "#ff3b3b");
   ctx.shadowBlur = 0; // reset so it doesn't bleed into the sensor lines drawn next
 }
 
@@ -430,7 +454,7 @@ function drawSensors(centerX, centerY) {
     ["right", rotate(heading, 1)],
   ]) {
     const delta = DELTAS[dir];
-    ctx.strokeStyle = sensors[label] ? "#ff3b3b" : "#39ff88"; // red = wall, green = clear
+    ctx.strokeStyle = sensors[label] ? colors.sensorWall : colors.sensorClear;
     ctx.beginPath();
     ctx.moveTo(centerX, centerY);
     ctx.lineTo(
@@ -628,9 +652,54 @@ document.getElementById("resetButton").addEventListener("click", () => {
   draw();
 });
 
+// Clears every wall back to an empty grid — for starting a hand-drawn maze
+// over from scratch. Deliberately doesn't touch the robot at all (unlike
+// Reset Robot or Randomize) — clearing walls can't strand it anywhere
+// invalid, since every cell is now open.
+document.getElementById("resetMazeButton").addEventListener("click", () => {
+  for (let row = 0; row < GRID_SIZE; row++) {
+    for (let col = 0; col < GRID_SIZE; col++) {
+      grid[row][col] = false;
+    }
+  }
+  draw();
+});
+
 document.getElementById("randomizeButton").addEventListener("click", () => {
   generateMaze();
   resetRobot();
+  draw();
+});
+
+// --- Color pickers ---
+// Each legend swatch is a native <input type="color"> — clicking one opens
+// the browser's own color picker, no extra library needed. This list maps
+// each input's id to the key it controls in the `colors` object above.
+const COLOR_INPUTS = [
+  { id: "color-wall", key: "wall" },
+  { id: "color-start", key: "start" },
+  { id: "color-end", key: "end" },
+  { id: "color-robot", key: "robot" },
+  { id: "color-sensor-clear", key: "sensorClear" },
+  { id: "color-sensor-wall", key: "sensorWall" },
+  { id: "color-actual-path", key: "actualPath" },
+  { id: "color-shortest-path", key: "shortestPath" },
+];
+
+for (const { id, key } of COLOR_INPUTS) {
+  document.getElementById(id).addEventListener("input", (event) => {
+    colors[key] = event.target.value;
+    draw();
+  });
+}
+
+document.getElementById("resetColorsButton").addEventListener("click", () => {
+  Object.assign(colors, DEFAULT_COLORS);
+  // The <input type="color"> elements have their own displayed value too —
+  // updating the `colors` object alone wouldn't move the pickers back.
+  for (const { id, key } of COLOR_INPUTS) {
+    document.getElementById(id).value = DEFAULT_COLORS[key];
+  }
   draw();
 });
 

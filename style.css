@@ -4,6 +4,14 @@ body {
   text-align: center;
   background: #0b0e14;
   color: #d7dde5;
+  margin: 0;
+  /* min-height: 100vh (100% of the browser window's height) plus centering
+     the body's own content is what actually centers things against the
+     whole page, rather than just against other elements next to it. */
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 h1 {
@@ -81,26 +89,58 @@ canvas {
   box-shadow: 0 0 4px rgba(0, 229, 255, 0.6);
 }
 
-/* --- Legend --- */
-/* Swatch colors here must match the fill colors used in script.js's draw(). */
-.legend {
+/* --- Page layout --- */
+/* Main content on the left, the color sidebar on the right. Wraps to a
+   stacked layout on narrow screens instead of squeezing everything. */
+.page {
   display: flex;
   justify-content: center;
-  gap: 20px;
-  margin-top: 16px;
+  align-items: center; /* centers the (shorter) sidebar against the (taller) main content */
+  gap: 36px;
   flex-wrap: wrap;
+}
+
+/* --- Legend / color sidebar --- */
+/* Each swatch below is a real <input type="color"> — clicking one opens
+   the browser's native color picker. Their values are the live source of
+   truth (read by script.js's `colors` object), not just a display. */
+.legend {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 20px;
+  text-align: left;
+  min-width: 180px;
+  background: #12161f;
+  border: 1px solid #2a3140;
+  border-radius: 8px;
+  box-shadow: 0 0 16px rgba(0, 229, 255, 0.12);
+}
+
+.legend h2 {
+  color: #00e5ff;
+  font-size: 14px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin: 0 0 4px;
 }
 
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   font-size: 14px;
+  cursor: pointer;
 }
 
 .legend-swatch {
-  width: 16px;
-  height: 16px;
+  width: 22px;
+  height: 22px;
   border: 1px solid #444;
-  display: inline-block;
+  border-radius: 3px;
+  padding: 0;
+  background: none;
+  cursor: pointer;
 }
