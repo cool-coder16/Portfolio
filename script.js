@@ -11,12 +11,14 @@ canvas.width = GRID_SIZE * CELL_SIZE;
 canvas.height = GRID_SIZE * CELL_SIZE;
 
 // --- Customizable colors ---
-// Every color a legend swatch controls, in one place. DEFAULT_COLORS is a
-// frozen copy of the original palette so "Reset All Colors" has something
-// to restore; `colors` is the live, editable copy everything else reads
-// from. Colors NOT in this list (the dark path background, grid lines) are
-// deliberately fixed, not exposed for editing.
-const DEFAULT_COLORS = {
+// Every color a legend swatch controls, in one place. There are two full
+// default palettes — one tuned to look right on a dark path background,
+// one for a light path background — since colors that pop on dark (like a
+// white robot) can vanish entirely on light, and vice versa. `colors` is
+// the live, editable copy everything else reads from; `currentDefaults`
+// points at whichever palette is active, so "Reset All Colors" restores
+// the right one instead of always going back to dark mode's colors.
+const DARK_DEFAULT_COLORS = {
   wall: "#f0f0f0",
   start: "#3aa0ff",
   end: "#ffcc33",
@@ -27,7 +29,29 @@ const DEFAULT_COLORS = {
   actualPath: "#ffcc33",
   shortestPath: "#3aa0ff",
 };
-const colors = { ...DEFAULT_COLORS };
+const LIGHT_DEFAULT_COLORS = {
+  wall: "#1c212b",
+  start: "#2b7fd1",
+  end: "#e0a800",
+  robot: "#20242c",
+  robotHighlight: "#d32f2f",
+  sensorClear: "#1fa855",
+  sensorWall: "#d32f2f",
+  actualPath: "#e0a800",
+  shortestPath: "#2b7fd1",
+};
+
+// The open-path fill and grid lines aren't legend swatches (nothing to
+// customize), but they still need to flip between themes, same reasoning.
+const CANVAS_THEME = {
+  dark: { path: "#1c212b", gridLine: "#2f3542" },
+  light: { path: "#ffffff", gridLine: "#ccd3dc" },
+};
+
+let isLightMode = false;
+let currentDefaults = DARK_DEFAULT_COLORS;
+let canvasTheme = CANVAS_THEME.dark;
+const colors = { ...currentDefaults };
 
 // Build a GRID_SIZE x GRID_SIZE grid, every cell starts as "no wall" (false).
 const grid = Array.from({ length: GRID_SIZE }, () =>
@@ -276,7 +300,8 @@ function draw() {
       const y = row * CELL_SIZE;
 
       // Wall/start/end colors are user-customizable (see the `colors`
-      // object above and the sidebar color pickers); open path stays fixed.
+      // object above and the sidebar color pickers); open path and grid
+      // lines follow the dark/light theme instead (canvasTheme).
       if (grid[row][col]) {
         ctx.fillStyle = colors.wall;
       } else if (row === START.row && col === START.col) {
@@ -284,11 +309,11 @@ function draw() {
       } else if (row === END.row && col === END.col) {
         ctx.fillStyle = colors.end;
       } else {
-        ctx.fillStyle = "#1c212b"; // open path
+        ctx.fillStyle = canvasTheme.path;
       }
       ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
 
-      ctx.strokeStyle = "#2f3542";
+      ctx.strokeStyle = canvasTheme.gridLine;
       ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
     }
   }
@@ -700,14 +725,46 @@ for (const { id, key } of COLOR_INPUTS) {
   });
 }
 
-document.getElementById("resetColorsButton").addEventListener("click", () => {
-  Object.assign(colors, DEFAULT_COLORS);
-  // The <input type="color"> elements have their own displayed value too —
-  // updating the `colors` object alone wouldn't move the pickers back.
+// Applies a full palette to both the live `colors` object and the visible
+// color-picker inputs (updating `colors` alone wouldn't move the pickers).
+function applyColorPalette(palette) {
+  Object.assign(colors, palette);
   for (const { id, key } of COLOR_INPUTS) {
-    document.getElementById(id).value = DEFAULT_COLORS[key];
+    document.getElementById(id).value = palette[key];
   }
+}
+
+document.getElementById("resetColorsButton").addEventListener("click", () => {
+  applyColorPalette(currentDefaults);
   draw();
 });
+
+// --- Dark / light mode ---
+const themeToggleButton = document.getElementById("themeToggle");
+
+// Shared by the initial page load and the toggle button, so both apply a
+// theme change the exact same way.
+function applyTheme(lightMode) {
+  isLightMode = lightMode;
+
+  document.documentElement.classList.toggle("light-theme", isLightMode);
+  themeToggleButton.textContent = isLightMode ? "Dark Mode" : "Light Mode";
+
+  canvasTheme = isLightMode ? CANVAS_THEME.light : CANVAS_THEME.dark;
+  currentDefaults = isLightMode ? LIGHT_DEFAULT_COLORS : DARK_DEFAULT_COLORS;
+  applyColorPalette(currentDefaults);
+}
+
+themeToggleButton.addEventListener("click", () => {
+  applyTheme(!isLightMode);
+  draw();
+});
+
+// Default to whatever the user's OS/browser is already set to, rather than
+// always starting in dark mode. This only reads it once at load — if the
+// user then toggles manually, we respect that choice instead of flipping
+// the theme out from under them if their system setting changes later.
+const prefersLight = window.matchMedia("(prefers-color-scheme: light)").matches;
+applyTheme(prefersLight);
 
 draw();
