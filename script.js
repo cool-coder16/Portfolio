@@ -14,13 +14,14 @@ canvas.height = GRID_SIZE * CELL_SIZE;
 // Every color a legend swatch controls, in one place. DEFAULT_COLORS is a
 // frozen copy of the original palette so "Reset All Colors" has something
 // to restore; `colors` is the live, editable copy everything else reads
-// from. Colors NOT in this list (the dark path background, grid lines, the
-// robot's red glow) are deliberately fixed, not exposed for editing.
+// from. Colors NOT in this list (the dark path background, grid lines) are
+// deliberately fixed, not exposed for editing.
 const DEFAULT_COLORS = {
   wall: "#f0f0f0",
   start: "#3aa0ff",
   end: "#ffcc33",
   robot: "#ffffff",
+  robotHighlight: "#ff3b3b",
   sensorClear: "#39ff88",
   sensorWall: "#ff3b3b",
   actualPath: "#ffcc33",
@@ -414,14 +415,15 @@ function drawArrowShape(centerX, centerY, dir, fillStyle, strokeStyle) {
   ctx.restore();
 }
 
-// Paints each trail rectangle, fading out (an alpha added to the highlight
-// red) the older it gets. Runs every animation frame while the trail is active.
+// Paints each trail rectangle, fading out (via globalAlpha, so it works no
+// matter what hex color is picked) the older it gets. Matches the robot's
+// highlight color. Runs every animation frame while the trail is active.
 function drawTrail() {
   const now = Date.now();
+  ctx.fillStyle = colors.robotHighlight;
   for (const mark of trail) {
     const age = now - mark.startTime;
-    const opacity = Math.max(0, 1 - age / TRAIL_FADE_MS) * TRAIL_MAX_OPACITY;
-    ctx.fillStyle = `rgba(255, 59, 59, ${opacity})`;
+    ctx.globalAlpha = Math.max(0, 1 - age / TRAIL_FADE_MS) * TRAIL_MAX_OPACITY;
     ctx.fillRect(
       mark.x - TRAIL_RECT_SIZE / 2,
       mark.y - TRAIL_RECT_SIZE / 2,
@@ -429,14 +431,14 @@ function drawTrail() {
       TRAIL_RECT_SIZE,
     );
   }
+  ctx.globalAlpha = 1; // reset so nothing drawn after this is accidentally translucent
 }
 
 function drawRobotArrow(centerX, centerY) {
-  // The fill is user-customizable (colors.robot); the red glow + rim
-  // "highlight" is a fixed style choice, not tied to any legend swatch.
-  ctx.shadowColor = "#ff3b3b";
+  // Fill and the glow/rim "highlight" are both user-customizable now.
+  ctx.shadowColor = colors.robotHighlight;
   ctx.shadowBlur = 10;
-  drawArrowShape(centerX, centerY, heading, colors.robot, "#ff3b3b");
+  drawArrowShape(centerX, centerY, heading, colors.robot, colors.robotHighlight);
   ctx.shadowBlur = 0; // reset so it doesn't bleed into the sensor lines drawn next
 }
 
@@ -445,6 +447,7 @@ function drawRobotArrow(centerX, centerY) {
 function drawSensors(centerX, centerY) {
   const sensors = getSensors();
 
+  const lineOffset = CELL_SIZE * 0.2; // gap between the robot's center and where each line starts
   const lineLength = CELL_SIZE * 0.4;
   ctx.lineWidth = 3;
 
@@ -456,10 +459,13 @@ function drawSensors(centerX, centerY) {
     const delta = DELTAS[dir];
     ctx.strokeStyle = sensors[label] ? colors.sensorWall : colors.sensorClear;
     ctx.beginPath();
-    ctx.moveTo(centerX, centerY);
+    ctx.moveTo(
+      centerX + delta.col * lineOffset,
+      centerY + delta.row * lineOffset,
+    );
     ctx.lineTo(
-      centerX + delta.col * lineLength,
-      centerY + delta.row * lineLength,
+      centerX + delta.col * (lineOffset + lineLength),
+      centerY + delta.row * (lineOffset + lineLength),
     );
     ctx.stroke();
   }
@@ -680,6 +686,7 @@ const COLOR_INPUTS = [
   { id: "color-start", key: "start" },
   { id: "color-end", key: "end" },
   { id: "color-robot", key: "robot" },
+  { id: "color-robot-highlight", key: "robotHighlight" },
   { id: "color-sensor-clear", key: "sensorClear" },
   { id: "color-sensor-wall", key: "sensorWall" },
   { id: "color-actual-path", key: "actualPath" },

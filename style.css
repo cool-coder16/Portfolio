@@ -143,4 +143,24 @@ canvas {
   padding: 0;
   background: none;
   cursor: pointer;
+  /* Browsers wrap <input type="color"> in their own internal padding/
+     border around the actual swatch, which is what was making it look
+     rectangular even with equal width/height — appearance: none plus the
+     pseudo-elements below strip that default styling out. */
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.legend-swatch::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.legend-swatch::-webkit-color-swatch {
+  border: none;
+  border-radius: 2px;
+}
+
+.legend-swatch::-moz-color-swatch {
+  border: none;
+  border-radius: 2px;
 }
