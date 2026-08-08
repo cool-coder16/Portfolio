@@ -507,24 +507,68 @@ function drawSensors(centerX, centerY) {
     `Front: ${describe(sensors.front)}  |  Left: ${describe(sensors.left)}  |  Right: ${describe(sensors.right)}`;
 }
 
-canvas.addEventListener("click", (event) => {
-  // getBoundingClientRect() gives the canvas's position on the page, so we
-  // can turn a raw mouse click (page coordinates) into a position relative
-  // to the canvas itself, then into a row/col in our grid.
+// --- Maze editing (click, or click-and-drag) ---
+// getBoundingClientRect() gives the canvas's position on the page, so we
+// can turn a raw mouse position (page coordinates) into a position
+// relative to the canvas itself, then into a row/col in our grid.
+function getCellFromEvent(event) {
   const rect = canvas.getBoundingClientRect();
   const x = event.clientX - rect.left;
   const y = event.clientY - rect.top;
+  return {
+    row: Math.floor(y / CELL_SIZE),
+    col: Math.floor(x / CELL_SIZE),
+  };
+}
 
-  const col = Math.floor(x / CELL_SIZE);
-  const row = Math.floor(y / CELL_SIZE);
-
+// Sets a cell to be a wall or not — as opposed to toggling it, this lets a
+// whole drag stroke stay consistent (see dragAddsWalls below) instead of
+// flipping each cell independently.
+function setWallAt(row, col, shouldBeWall) {
   const isStartOrEnd =
     (row === START.row && col === START.col) ||
     (row === END.row && col === END.col);
   if (isStartOrEnd) return; // don't let start/end become walls
+  if (grid[row][col] === shouldBeWall) return; // already matches, nothing to do
 
-  grid[row][col] = !grid[row][col]; // toggle wall on/off
+  grid[row][col] = shouldBeWall;
   draw();
+}
+
+// Dragging affects every cell the cursor passes over, instead of needing a
+// separate click per cell. Whichever the very first cell of the drag was
+// decides the whole stroke's direction: starting on an empty cell only
+// adds walls for the rest of that drag, starting on a wall only clears
+// them — so one stroke can't accidentally do both.
+let isDragging = false;
+let lastToggledCell = null;
+let dragAddsWalls = true;
+
+canvas.addEventListener("mousedown", (event) => {
+  isDragging = true;
+  const { row, col } = getCellFromEvent(event);
+  lastToggledCell = `${row},${col}`;
+
+  dragAddsWalls = !grid[row][col];
+  setWallAt(row, col, dragAddsWalls);
+});
+
+canvas.addEventListener("mousemove", (event) => {
+  if (!isDragging) return;
+
+  const { row, col } = getCellFromEvent(event);
+  const key = `${row},${col}`;
+  if (key === lastToggledCell) return; // still inside the same cell as last time
+  lastToggledCell = key;
+  setWallAt(row, col, dragAddsWalls);
+});
+
+// Listens on the whole window, not just the canvas — if you release the
+// mouse button after dragging off the canvas, this still catches it and
+// stops the drag; a canvas-only listener would miss that entirely.
+window.addEventListener("mouseup", () => {
+  isDragging = false;
+  lastToggledCell = null;
 });
 
 // --- Manual driving ---
