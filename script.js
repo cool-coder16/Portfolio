@@ -736,7 +736,10 @@ function findPathAStar() {
     let currentObj = openSet.splice(bestIdx, 1)[0];
     if (currentObj.row === END.row && currentObj.col === END.col) {
       const path = [];
-      while (currentObj.row !== startCell.row || currentObj.col !== startCell.col) {
+      while (
+        currentObj.row !== startCell.row ||
+        currentObj.col !== startCell.col
+      ) {
         path.unshift(currentObj);
         currentObj = cameFrom.get(`${currentObj.row},${currentObj.col}`);
       }
