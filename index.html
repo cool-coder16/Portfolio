@@ -10,6 +10,19 @@
   <button id="themeToggle" class="btn theme-toggle">Light Mode</button>
 
   <div class="page">
+    <aside class="algorithms sidebar-panel">
+      <h2>Algorithm</h2>
+
+      <label class="panel-item">
+        <input type="radio" name="algorithm" value="right-hand" checked>
+        Right-Hand Rule
+      </label>
+      <label class="panel-item">
+        <input type="radio" name="algorithm" value="astar">
+        A*
+      </label>
+    </aside>
+
     <main>
       <h1>Maze Robot Simulator</h1>
       <p>Click cells to add or remove walls. Use arrow keys to drive the robot from start to end.</p>
@@ -19,6 +32,7 @@
       <p id="sensorReadout" class="readout"></p>
 
       <div class="controls">
+        <button id="stepButton" class="btn">Step</button>
         <button id="solveButton" class="btn">Solve</button>
         <button id="resetButton" class="btn">Reset Robot</button>
         <button id="resetMazeButton" class="btn">Reset Maze</button>
@@ -26,42 +40,42 @@
       </div>
     </main>
 
-    <aside class="legend">
+    <aside class="legend sidebar-panel">
       <h2>Colors</h2>
 
-      <label class="legend-item">
+      <label class="panel-item">
         <input type="color" class="legend-swatch" id="color-wall" value="#f0f0f0">
         Wall
       </label>
-      <label class="legend-item">
+      <label class="panel-item">
         <input type="color" class="legend-swatch" id="color-start" value="#3aa0ff">
         Start
       </label>
-      <label class="legend-item">
+      <label class="panel-item">
         <input type="color" class="legend-swatch" id="color-end" value="#ffcc33">
         End
       </label>
-      <label class="legend-item">
+      <label class="panel-item">
         <input type="color" class="legend-swatch" id="color-robot" value="#ffffff">
         Robot
       </label>
-      <label class="legend-item">
+      <label class="panel-item">
         <input type="color" class="legend-swatch" id="color-robot-highlight" value="#ff3b3b">
         Robot Highlight
       </label>
-      <label class="legend-item">
+      <label class="panel-item">
         <input type="color" class="legend-swatch" id="color-sensor-clear" value="#39ff88">
         Sensor: clear
       </label>
-      <label class="legend-item">
+      <label class="panel-item">
         <input type="color" class="legend-swatch" id="color-sensor-wall" value="#ff3b3b">
         Sensor: wall
       </label>
-      <label class="legend-item">
+      <label class="panel-item">
         <input type="color" class="legend-swatch" id="color-actual-path" value="#ffcc33">
         Actual path taken
       </label>
-      <label class="legend-item">
+      <label class="panel-item">
         <input type="color" class="legend-swatch" id="color-shortest-path" value="#3aa0ff">
         Shortest path
       </label>

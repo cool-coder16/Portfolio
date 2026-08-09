@@ -152,21 +152,22 @@ canvas {
 }
 
 /* --- Page layout --- */
-/* Main content on the left, the color sidebar on the right. Wraps to a
-   stacked layout on narrow screens instead of squeezing everything. */
+/* Algorithm menu on the left, main content in the middle, color sidebar on
+   the right (that's just DOM order, since flex lays children out left to
+   right). Wraps to a stacked layout on narrow screens instead of
+   squeezing everything. */
 .page {
   display: flex;
   justify-content: center;
-  align-items: center; /* centers the (shorter) sidebar against the (taller) main content */
+  align-items: center; /* centers the (shorter) sidebars against the (taller) main content */
   gap: 36px;
   flex-wrap: wrap;
 }
 
-/* --- Legend / color sidebar --- */
-/* Each swatch below is a real <input type="color"> — clicking one opens
-   the browser's native color picker. Their values are the live source of
-   truth (read by script.js's `colors` object), not just a display. */
-.legend {
+/* --- Sidebar panels (colors, algorithm) --- */
+/* Shared look for both side panels; content differs but the box, heading,
+   and row styling are identical. */
+.sidebar-panel {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -181,11 +182,11 @@ canvas {
   box-shadow: 0 0 16px rgba(0, 229, 255, 0.12);
 }
 
-:root.light-theme .legend {
+:root.light-theme .sidebar-panel {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
 }
 
-.legend h2 {
+.sidebar-panel h2 {
   color: var(--accent);
   font-size: 14px;
   letter-spacing: 2px;
@@ -193,12 +194,24 @@ canvas {
   margin: 0 0 4px;
 }
 
-.legend-item {
+.panel-item {
   display: flex;
   align-items: center;
   gap: 8px;
   font-size: 14px;
   cursor: pointer;
+}
+
+/* Tints the algorithm menu's native radio buttons to match the theme,
+   instead of the browser's default blue. */
+.panel-item input[type="radio"] {
+  accent-color: var(--accent);
+}
+
+/* Dims the whole row (not just the radio itself) while solving locks it. */
+.panel-item:has(input:disabled) {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .legend-swatch {

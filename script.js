@@ -95,7 +95,10 @@ function generateMaze() {
       const nextRow = row + dRow;
       const nextCol = col + dCol;
       const inBounds =
-        nextRow >= 0 && nextRow < GRID_SIZE && nextCol >= 0 && nextCol < GRID_SIZE;
+        nextRow >= 0 &&
+        nextRow < GRID_SIZE &&
+        nextCol >= 0 &&
+        nextCol < GRID_SIZE;
       if (inBounds && !visited.has(`${nextRow},${nextCol}`)) {
         grid[row + dRow / 2][col + dCol / 2] = false; // knock down the wall between
         carve(nextRow, nextCol);
@@ -257,7 +260,10 @@ function computeShortestPath() {
       const nextRow = current.row + delta.row;
       const nextCol = current.col + delta.col;
       const inBounds =
-        nextRow >= 0 && nextRow < GRID_SIZE && nextCol >= 0 && nextCol < GRID_SIZE;
+        nextRow >= 0 &&
+        nextRow < GRID_SIZE &&
+        nextCol >= 0 &&
+        nextCol < GRID_SIZE;
       if (!inBounds || grid[nextRow][nextCol]) continue;
 
       const key = `${nextRow},${nextCol}`;
@@ -352,7 +358,12 @@ function drawSolutionPaths() {
   ctx.fillStyle = colors.actualPath;
   ctx.globalAlpha = 0.5;
   for (const cell of uniqueCells.values()) {
-    ctx.fillRect(cell.col * CELL_SIZE, cell.row * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+    ctx.fillRect(
+      cell.col * CELL_SIZE,
+      cell.row * CELL_SIZE,
+      CELL_SIZE,
+      CELL_SIZE,
+    );
   }
   ctx.globalAlpha = 1; // reset so nothing drawn after this is accidentally translucent
 
@@ -382,7 +393,10 @@ function triggerSolveFlash() {
 
 function animateSolveFlash() {
   draw();
-  if (solveFlashStart !== null && Date.now() - solveFlashStart < SOLVE_FLASH_MS) {
+  if (
+    solveFlashStart !== null &&
+    Date.now() - solveFlashStart < SOLVE_FLASH_MS
+  ) {
     requestAnimationFrame(animateSolveFlash);
   } else {
     solveFlashStart = null;
@@ -463,7 +477,13 @@ function drawRobotArrow(centerX, centerY) {
   // Fill and the glow/rim "highlight" are both user-customizable now.
   ctx.shadowColor = colors.robotHighlight;
   ctx.shadowBlur = 10;
-  drawArrowShape(centerX, centerY, heading, colors.robot, colors.robotHighlight);
+  drawArrowShape(
+    centerX,
+    centerY,
+    heading,
+    colors.robot,
+    colors.robotHighlight,
+  );
   ctx.shadowBlur = 0; // reset so it doesn't bleed into the sensor lines drawn next
 }
 
@@ -638,6 +658,157 @@ function chooseNextAction(sensors) {
   }
 }
 
+// --- A* pathfinding algorithm (YOU write this) ---
+// This is a fundamentally different kind of algorithm from
+// chooseNextAction() above. The wall-follower is reactive and local — it
+// only ever sees front/left/right and reacts one step at a time, with no
+// memory of the maze. A* is the opposite: it's given the *entire* grid up
+// front (like a robot that already has a full map, e.g. from a prior
+// scanning pass) and plans the complete shortest route before taking a
+// single step.
+//
+// Write it here, returning an array of { row, col } objects — the path
+// from the robot's current cell to END, inclusive of both ends — or an
+// empty array [] if no path exists. Once you return a path, the rest of
+// the app (see autoSolveStepAStar below) will drive the robot along it
+// automatically, one cell per step, reusing the same turning/moving code
+// as the wall-follower.
+//
+// --- A* pseudocode ---
+// A* is Dijkstra's algorithm with a heuristic added, so it explores toward
+// the goal instead of spreading out equally in every direction:
+//
+//   openSet = [startCell]
+//   gScore = map of cell -> steps taken to reach it so far; gScore[start] = 0
+//   fScore = map of cell -> gScore[cell] + heuristic(cell, END)
+//   cameFrom = map of cell -> the cell we stepped from to reach it
+//     (exactly like computeShortestPath() above already uses to rebuild
+//     its path — that function is a good reference for the bookkeeping.)
+//
+//   while openSet is not empty:
+//     current = the cell in openSet with the lowest fScore
+//     if current is END: rebuild the path via cameFrom and return it
+//     remove current from openSet
+//
+//     for each open, in-bounds neighbor of current (up/down/left/right):
+//       tentativeG = gScore[current] + 1   (every move costs 1 step)
+//       if neighbor has no gScore yet, or tentativeG is better than its
+//       current gScore:
+//         cameFrom[neighbor] = current
+//         gScore[neighbor] = tentativeG
+//         fScore[neighbor] = tentativeG + heuristic(neighbor, END)
+//         add neighbor to openSet if it isn't already there
+//
+//   if the loop ends without reaching END, there's no path — return []
+//
+// heuristic(cell, END): Manhattan distance, |cell.row - END.row| +
+// |cell.col - END.col| — a safe (never-overestimating) estimate here,
+// since every move is exactly one grid step in one direction.
+//
+// A 15x15 grid is small enough that scanning openSet for the lowest
+// fScore each loop (rather than a proper priority queue/heap) is plenty
+// fast — no need to build anything fancier than a plain array.
+function findPathAStar() {
+  // Plans from wherever the robot actually is right now, not always from
+  // the maze's fixed START tile — so this still makes sense if you've
+  // manually driven partway before switching to A*.
+  const startCell = { row: robot.row, col: robot.col };
+
+  const cameFrom = new Map();
+  const gScores = new Map();
+  const fScores = new Map();
+
+  const openSet = [startCell];
+  gScores.set(`${startCell.row},${startCell.col}`, 0);
+  fScores.set(`${startCell.row},${startCell.col}`, 0 + heuristic(startCell));
+
+  while (openSet.length > 0) {
+    let bestF = Infinity;
+    let bestIdx = 0;
+    openSet.forEach((cell, i) => {
+      let fScore = fScores.get(`${cell.row},${cell.col}`);
+      if (fScore < bestF) {
+        bestF = fScore;
+        bestIdx = i;
+      }
+    });
+
+    let currentObj = openSet.splice(bestIdx, 1)[0];
+    if (currentObj.row === END.row && currentObj.col === END.col) {
+      const path = [];
+      while (currentObj.row !== startCell.row || currentObj.col !== startCell.col) {
+        path.unshift(currentObj);
+        currentObj = cameFrom.get(`${currentObj.row},${currentObj.col}`);
+      }
+      path.unshift(startCell);
+      return path;
+    }
+
+    const neighbors = [];
+    if (openCell({ row: currentObj.row + 1, col: currentObj.col }))
+      neighbors.push({ row: currentObj.row + 1, col: currentObj.col });
+
+    if (openCell({ row: currentObj.row - 1, col: currentObj.col }))
+      neighbors.push({ row: currentObj.row - 1, col: currentObj.col });
+
+    if (openCell({ row: currentObj.row, col: currentObj.col + 1 }))
+      neighbors.push({ row: currentObj.row, col: currentObj.col + 1 });
+
+    if (openCell({ row: currentObj.row, col: currentObj.col - 1 }))
+      neighbors.push({ row: currentObj.row, col: currentObj.col - 1 });
+
+    neighbors.forEach((neighbor) => {
+      const tentativeG = gScores.get(`${currentObj.row},${currentObj.col}`) + 1;
+      const currentG =
+        gScores.get(`${neighbor.row},${neighbor.col}`) ?? Infinity;
+      if (tentativeG < currentG) {
+        cameFrom.set(`${neighbor.row},${neighbor.col}`, currentObj);
+        gScores.set(`${neighbor.row},${neighbor.col}`, tentativeG);
+        fScores.set(
+          `${neighbor.row},${neighbor.col}`,
+          tentativeG + heuristic(neighbor),
+        );
+
+        if (
+          !openSet.some(
+            (cell) => cell.row === neighbor.row && cell.col === neighbor.col,
+          )
+        ) {
+          openSet.push(neighbor);
+        }
+      }
+    });
+  }
+
+  return [];
+}
+
+function openCell(cellObj) {
+  if (cellObj.row < 0 || cellObj.row > 14) return false;
+  if (cellObj.col < 0 || cellObj.col > 14) return false;
+  if (grid[cellObj.row][cellObj.col]) return false;
+
+  return true;
+}
+
+function heuristic(cellObj) {
+  return Math.abs(cellObj.row - END.row) + Math.abs(cellObj.col - END.col);
+}
+
+// Figures out which of up/down/left/right leads from one cell to an
+// adjacent one — used to translate findPathAStar()'s path into actual
+// turns, since moveForward() only knows how to move in `heading`'s
+// direction, not "go to this specific cell."
+function directionBetween(from, to) {
+  for (const dir of DIR_ORDER) {
+    const delta = DELTAS[dir];
+    if (from.row + delta.row === to.row && from.col + delta.col === to.col) {
+      return dir;
+    }
+  }
+  return null; // from/to aren't adjacent — shouldn't happen for a valid path
+}
+
 // --- Auto-solve loop ---
 // Turns chooseNextAction()'s answer into an actual robot movement.
 function applyAction(action) {
@@ -659,39 +830,144 @@ let solveStepCount = 0;
 let solveTimeoutId = null;
 const solveButton = document.getElementById("solveButton");
 
-function autoSolveStep() {
+// Does exactly one right-hand-rule step, returning true once solving is
+// over (reached the end, or hit the step limit) — shared by the auto-solve
+// loop below and the manual Step button, so both take a step identically.
+function performRightHandStep() {
   if (robot.row === END.row && robot.col === END.col) {
     celebrateSolve(`Solved in ${solveStepCount} steps!`);
-    stopSolving();
-    return;
+    return true;
   }
 
   if (solveStepCount >= MAX_SOLVE_STEPS) {
     document.getElementById("sensorReadout").textContent =
       `Stopped after ${MAX_SOLVE_STEPS} steps without reaching the end — check chooseNextAction().`;
-    stopSolving();
-    return;
+    return true;
   }
 
   applyAction(chooseNextAction(getSensors()));
   draw();
   solveStepCount++;
+  return false;
+}
 
+function autoSolveStep() {
+  if (performRightHandStep()) {
+    stopSolving();
+    return;
+  }
   solveTimeoutId = setTimeout(autoSolveStep, SOLVE_STEP_DELAY_MS);
+}
+
+// The A* equivalent of the pair above: instead of asking an algorithm what
+// to do at every step, the whole route was already decided once by
+// findPathAStar() before stepping started — each call just turns to face
+// and steps into the next cell in that route.
+let currentPath = [];
+let pathStepIndex = 0;
+
+function performAStarStep() {
+  if (robot.row === END.row && robot.col === END.col) {
+    celebrateSolve(`Solved in ${solveStepCount} steps!`);
+    return true;
+  }
+
+  if (pathStepIndex >= currentPath.length) {
+    document.getElementById("sensorReadout").textContent =
+      "A* didn't reach the end — check findPathAStar().";
+    return true;
+  }
+
+  const nextCell = currentPath[pathStepIndex];
+  pathStepIndex++;
+
+  const dir = directionBetween(robot, nextCell);
+  if (dir) {
+    heading = dir;
+    moveForward();
+  }
+
+  draw();
+  solveStepCount++;
+  return false;
+}
+
+function autoSolveStepAStar() {
+  if (performAStarStep()) {
+    stopSolving();
+    return;
+  }
+  solveTimeoutId = setTimeout(autoSolveStepAStar, SOLVE_STEP_DELAY_MS);
+}
+
+function getSelectedAlgorithm() {
+  return document.querySelector('input[name="algorithm"]:checked').value;
+}
+
+// Locks the algorithm menu while solving — switching mid-run wouldn't
+// actually change which algorithm is driving (that's decided once when
+// solving starts), so letting the radios still look clickable would just
+// be misleading.
+function setAlgorithmMenuDisabled(disabled) {
+  document.querySelectorAll('input[name="algorithm"]').forEach((input) => {
+    input.disabled = disabled;
+  });
 }
 
 function startSolving() {
   solving = true;
   solveStepCount = 0;
   solveButton.textContent = "Stop";
-  autoSolveStep();
+  setAlgorithmMenuDisabled(true);
+
+  if (getSelectedAlgorithm() === "astar") {
+    currentPath = findPathAStar();
+    pathStepIndex = 1; // index 0 is the robot's current cell, already where it's standing
+    if (currentPath.length === 0) {
+      document.getElementById("sensorReadout").textContent =
+        "A* returned no path — check findPathAStar().";
+      stopSolving();
+      return;
+    }
+    autoSolveStepAStar();
+  } else {
+    autoSolveStep();
+  }
 }
 
 function stopSolving() {
   solving = false;
   clearTimeout(solveTimeoutId);
   solveButton.textContent = "Solve";
+  setAlgorithmMenuDisabled(false);
 }
+
+// Runs exactly one step of whichever algorithm is currently selected, then
+// stops — same per-step logic the auto-solver uses, just without
+// scheduling another one afterward.
+function stepOnce() {
+  if (solving) return; // don't fight with the auto-solver while it's running
+
+  if (getSelectedAlgorithm() === "astar") {
+    if (currentPath.length === 0) {
+      // Nothing computed yet for this run — plan it once, same as Solve
+      // would, but still only take a single step.
+      currentPath = findPathAStar();
+      pathStepIndex = 1; // index 0 is the robot's current cell, already where it's standing
+      solveStepCount = 0;
+      if (currentPath.length === 0) {
+        document.getElementById("sensorReadout").textContent =
+          "A* returned no path — check findPathAStar().";
+        return;
+      }
+    }
+    performAStarStep();
+  } else {
+    performRightHandStep();
+  }
+}
+
+document.getElementById("stepButton").addEventListener("click", stepOnce);
 
 solveButton.addEventListener("click", () => {
   if (solving) {
@@ -719,6 +995,9 @@ function resetRobot() {
   shortestPath = [];
   showSolutionPaths = false;
   solveFlashStart = null; // cancel any in-progress flash animation
+  currentPath = [];
+  pathStepIndex = 0;
+  solveStepCount = 0;
   document.getElementById("sensorReadout").classList.remove("solved");
 }
 
