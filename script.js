@@ -1,7 +1,10 @@
 // --- Grid setup ---
 // The maze is a grid of square cells. We store it as a 2D array of
 // true/false values: grid[row][col] === true means "there's a wall here".
-const GRID_SIZE = 15; // cells per side
+// GRID_SIZE is adjustable via the Size slider, so it's a `let`, not a
+// `const` — and it must always stay ODD, since generateMaze()'s carving
+// trick relies on START and END both landing on even row/col indices.
+let GRID_SIZE = 15; // cells per side
 const CELL_SIZE = 30; // pixels per cell
 
 const canvas = document.getElementById("mazeCanvas");
@@ -54,9 +57,8 @@ let canvasTheme = CANVAS_THEME.dark;
 const colors = { ...currentDefaults };
 
 // Build a GRID_SIZE x GRID_SIZE grid, every cell starts as "no wall" (false).
-const grid = Array.from({ length: GRID_SIZE }, () =>
-  Array(GRID_SIZE).fill(false),
-);
+// Rebuilt from scratch by resizeMaze() whenever the Size slider changes.
+let grid = Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(false));
 
 // --- Maze generation ---
 // Builds a "perfect" maze with randomized depth-first search: start with
@@ -825,8 +827,14 @@ function applyAction(action) {
   }
 }
 
-const SOLVE_STEP_DELAY_MS = 200; // pause between steps, so you can watch it think
-const MAX_SOLVE_STEPS = 500; // safety net against an infinite loop in a buggy algorithm
+let SOLVE_STEP_DELAY_MS = 200; // pause between steps; adjustable via the Speed slider
+
+// Safety net against an infinite loop in a buggy algorithm — scales with
+// the maze's area so a bigger maze (more cells to possibly backtrack
+// through) doesn't get flagged as "stuck" too early.
+function getMaxSolveSteps() {
+  return GRID_SIZE * GRID_SIZE * 3;
+}
 
 let solving = false;
 let solveStepCount = 0;
@@ -842,9 +850,9 @@ function performRightHandStep() {
     return true;
   }
 
-  if (solveStepCount >= MAX_SOLVE_STEPS) {
+  if (solveStepCount >= getMaxSolveSteps()) {
     document.getElementById("sensorReadout").textContent =
-      `Stopped after ${MAX_SOLVE_STEPS} steps without reaching the end — check chooseNextAction().`;
+      `Stopped after ${getMaxSolveSteps()} steps without reaching the end — check chooseNextAction().`;
     return true;
   }
 
@@ -1026,6 +1034,52 @@ document.getElementById("randomizeButton").addEventListener("click", () => {
   generateMaze();
   resetRobot();
   draw();
+});
+
+// --- Parameters: size & speed sliders ---
+// Rebuilds the maze at a new size — the canvas and the grid array are both
+// only ever sized once at load normally, so changing GRID_SIZE alone
+// wouldn't resize anything on its own; this is what actually applies it.
+// Clears to an empty grid rather than auto-generating a new maze, so
+// dragging the slider doesn't repeatedly throw away a hand-drawn maze —
+// press Randomize afterward if you want a generated one at the new size.
+function resizeMaze(newSize) {
+  if (solving) stopSolving();
+
+  GRID_SIZE = newSize;
+  END.row = GRID_SIZE - 1;
+  END.col = GRID_SIZE - 1;
+
+  canvas.width = GRID_SIZE * CELL_SIZE;
+  canvas.height = GRID_SIZE * CELL_SIZE;
+
+  grid = Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(false));
+
+  resetRobot();
+  draw();
+}
+
+const sizeSlider = document.getElementById("sizeSlider");
+const sizeValue = document.getElementById("sizeValue");
+const speedSlider = document.getElementById("speedSlider");
+const speedValue = document.getElementById("speedValue");
+
+// Updates the on-screen "NxN" label live while dragging, but only actually
+// resizes (which clears the maze) once the slider is released — otherwise
+// dragging across several sizes would clear the maze once per size crossed.
+sizeSlider.addEventListener("input", () => {
+  sizeValue.textContent = `${sizeSlider.value}×${sizeSlider.value}`;
+});
+sizeSlider.addEventListener("change", () => {
+  resizeMaze(Number(sizeSlider.value));
+});
+
+// Speed is framed as "steps per second" rather than a raw delay, since
+// higher = faster reads naturally; SOLVE_STEP_DELAY_MS is just 1000 / that.
+speedSlider.addEventListener("input", () => {
+  const stepsPerSecond = Number(speedSlider.value);
+  speedValue.textContent = stepsPerSecond;
+  SOLVE_STEP_DELAY_MS = 1000 / stepsPerSecond;
 });
 
 // --- Color pickers ---

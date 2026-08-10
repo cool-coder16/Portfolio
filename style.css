@@ -166,6 +166,14 @@ canvas {
   flex-wrap: wrap;
 }
 
+/* Stacks the color panel and the parameters panel on top of each other,
+   on the right side, instead of side by side. */
+.right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
 /* --- Sidebar panels (colors, algorithm) --- */
 /* Shared look for both side panels; content differs but the box, heading,
    and row styling are identical. */
@@ -207,6 +215,19 @@ canvas {
 /* Tints the algorithm menu's native radio buttons to match the theme,
    instead of the browser's default blue. */
 .panel-item input[type="radio"] {
+  accent-color: var(--accent);
+}
+
+.slider-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  font-size: 14px;
+}
+
+.slider-item input[type="range"] {
+  width: 100%;
   accent-color: var(--accent);
 }
 

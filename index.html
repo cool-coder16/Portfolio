@@ -52,8 +52,9 @@
         </div>
       </main>
 
-      <aside class="legend sidebar-panel">
-        <h2>Colors</h2>
+      <div class="right-column">
+        <aside class="legend sidebar-panel">
+          <h2>Colors</h2>
 
         <label class="panel-item">
           <input
@@ -139,6 +140,21 @@
 
         <button id="resetColorsButton" class="btn">Reset All Colors</button>
       </aside>
+
+      <aside class="parameters sidebar-panel">
+        <h2>Parameters</h2>
+
+        <div class="slider-item">
+          <label for="sizeSlider">Size: <span id="sizeValue">15×15</span></label>
+          <input type="range" id="sizeSlider" min="9" max="25" step="2" value="15">
+        </div>
+
+        <div class="slider-item">
+          <label for="speedSlider">Speed: <span id="speedValue">5</span> steps/sec</label>
+          <input type="range" id="speedSlider" min="1" max="20" step="1" value="5">
+        </div>
+      </aside>
+      </div>
     </div>
 
     <script src="script.js"></script>
