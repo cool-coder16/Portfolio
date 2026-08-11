@@ -660,137 +660,145 @@ function chooseNextAction(sensors) {
   }
 }
 
-// --- A* pathfinding algorithm (YOU write this) ---
-// This is a fundamentally different kind of algorithm from
-// chooseNextAction() above. The wall-follower is reactive and local — it
-// only ever sees front/left/right and reacts one step at a time, with no
-// memory of the maze. A* is the opposite: it's given the *entire* grid up
-// front (like a robot that already has a full map, e.g. from a prior
-// scanning pass) and plans the complete shortest route before taking a
-// single step.
+// --- A* pathfinding algorithm ---
+// Unlike the original version, this runs the real A* search one expansion
+// at a time, with the robot's own physical position standing in for
+// "current" — so if the search's frontier moves to a cell that isn't
+// adjacent to wherever the robot physically is, the robot has to actually
+// walk there through already-explored cells (see computeWalkRoute below).
+// That's what makes wrong turns visible: it'll walk down a dead end, run
+// out of better options there, and physically backtrack once the search
+// realizes a different branch scores better.
 //
-// Write it here, returning an array of { row, col } objects — the path
-// from the robot's current cell to END, inclusive of both ends — or an
-// empty array [] if no path exists. Once you return a path, the rest of
-// the app (see autoSolveStepAStar below) will drive the robot along it
-// automatically, one cell per step, reusing the same turning/moving code
-// as the wall-follower.
-//
-// --- A* pseudocode ---
-// A* is Dijkstra's algorithm with a heuristic added, so it explores toward
-// the goal instead of spreading out equally in every direction:
-//
-//   openSet = [startCell]
-//   gScore = map of cell -> steps taken to reach it so far; gScore[start] = 0
-//   fScore = map of cell -> gScore[cell] + heuristic(cell, END)
-//   cameFrom = map of cell -> the cell we stepped from to reach it
-//     (exactly like computeShortestPath() above already uses to rebuild
-//     its path — that function is a good reference for the bookkeeping.)
-//
-//   while openSet is not empty:
-//     current = the cell in openSet with the lowest fScore
-//     if current is END: rebuild the path via cameFrom and return it
-//     remove current from openSet
-//
-//     for each open, in-bounds neighbor of current (up/down/left/right):
-//       tentativeG = gScore[current] + 1   (every move costs 1 step)
-//       if neighbor has no gScore yet, or tentativeG is better than its
-//       current gScore:
-//         cameFrom[neighbor] = current
-//         gScore[neighbor] = tentativeG
-//         fScore[neighbor] = tentativeG + heuristic(neighbor, END)
-//         add neighbor to openSet if it isn't already there
-//
-//   if the loop ends without reaching END, there's no path — return []
-//
-// heuristic(cell, END): Manhattan distance, |cell.row - END.row| +
-// |cell.col - END.col| — a safe (never-overestimating) estimate here,
-// since every move is exactly one grid step in one direction.
-//
-// A 15x15 grid is small enough that scanning openSet for the lowest
-// fScore each loop (rather than a proper priority queue/heap) is plenty
-// fast — no need to build anything fancier than a plain array.
-function findPathAStar() {
-  // Plans from wherever the robot actually is right now, not always from
-  // the maze's fixed START tile — so this still makes sense if you've
-  // manually driven partway before switching to A*.
+// This state persists across steps (search progress isn't thrown away
+// between calls) and gets reset by resetAStarSearch() whenever a fresh
+// search should start.
+let astarOpenSet = [];
+let astarGScore = new Map();
+let astarFScore = new Map();
+let astarCameFrom = new Map();
+let astarMoveQueue = []; // cells still queued for the robot to physically walk through
+let astarSearchStarted = false;
+
+function resetAStarSearch() {
   const startCell = { row: robot.row, col: robot.col };
+  astarOpenSet = [startCell];
+  astarGScore = new Map([[`${startCell.row},${startCell.col}`, 0]]);
+  astarFScore = new Map([[`${startCell.row},${startCell.col}`, heuristic(startCell)]]);
+  astarCameFrom = new Map();
+  astarMoveQueue = [];
+  astarSearchStarted = true;
+}
 
-  const cameFrom = new Map();
-  const gScores = new Map();
-  const fScores = new Map();
+// One A* expansion: scores the robot's current cell's (up to 4) neighbors
+// — exactly the same gScore/fScore/cameFrom bookkeeping as a normal A*
+// loop body — then picks whichever cell across the *entire* open set now
+// has the lowest fScore as the next target. That target is often one of
+// the neighbors just scored, but it can just as easily be a cell
+// discovered several steps ago somewhere else entirely, if it's now
+// looking more promising — that's the real search behavior this is meant
+// to show, as opposed to only ever looking at what's immediately next door.
+// Returns the chosen target cell, or null if the open set has run dry
+// (nowhere left to search) without ever reaching END.
+function expandAStarStep() {
+  const currentObj = { row: robot.row, col: robot.col };
 
-  const openSet = [startCell];
-  gScores.set(`${startCell.row},${startCell.col}`, 0);
-  fScores.set(`${startCell.row},${startCell.col}`, 0 + heuristic(startCell));
+  const neighbors = [];
+  if (openCell({ row: currentObj.row + 1, col: currentObj.col }))
+    neighbors.push({ row: currentObj.row + 1, col: currentObj.col });
+  if (openCell({ row: currentObj.row - 1, col: currentObj.col }))
+    neighbors.push({ row: currentObj.row - 1, col: currentObj.col });
+  if (openCell({ row: currentObj.row, col: currentObj.col + 1 }))
+    neighbors.push({ row: currentObj.row, col: currentObj.col + 1 });
+  if (openCell({ row: currentObj.row, col: currentObj.col - 1 }))
+    neighbors.push({ row: currentObj.row, col: currentObj.col - 1 });
 
-  while (openSet.length > 0) {
-    let bestF = Infinity;
-    let bestIdx = 0;
-    openSet.forEach((cell, i) => {
-      let fScore = fScores.get(`${cell.row},${cell.col}`);
-      if (fScore < bestF) {
-        bestF = fScore;
-        bestIdx = i;
-      }
-    });
+  neighbors.forEach((neighbor) => {
+    const tentativeG = astarGScore.get(`${currentObj.row},${currentObj.col}`) + 1;
+    const currentG = astarGScore.get(`${neighbor.row},${neighbor.col}`) ?? Infinity;
+    if (tentativeG < currentG) {
+      astarCameFrom.set(`${neighbor.row},${neighbor.col}`, currentObj);
+      astarGScore.set(`${neighbor.row},${neighbor.col}`, tentativeG);
+      astarFScore.set(`${neighbor.row},${neighbor.col}`, tentativeG + heuristic(neighbor));
 
-    let currentObj = openSet.splice(bestIdx, 1)[0];
-    if (currentObj.row === END.row && currentObj.col === END.col) {
-      const path = [];
-      while (
-        currentObj.row !== startCell.row ||
-        currentObj.col !== startCell.col
+      if (
+        !astarOpenSet.some(
+          (cell) => cell.row === neighbor.row && cell.col === neighbor.col,
+        )
       ) {
-        path.unshift(currentObj);
-        currentObj = cameFrom.get(`${currentObj.row},${currentObj.col}`);
+        astarOpenSet.push(neighbor);
       }
-      path.unshift(startCell);
-      return path;
     }
+  });
 
-    const neighbors = [];
-    if (openCell({ row: currentObj.row + 1, col: currentObj.col }))
-      neighbors.push({ row: currentObj.row + 1, col: currentObj.col });
+  // The robot's current cell has now been fully expanded — it's "settled",
+  // same as A* removing `current` from the open set each loop.
+  astarOpenSet = astarOpenSet.filter(
+    (cell) => !(cell.row === currentObj.row && cell.col === currentObj.col),
+  );
 
-    if (openCell({ row: currentObj.row - 1, col: currentObj.col }))
-      neighbors.push({ row: currentObj.row - 1, col: currentObj.col });
+  if (astarOpenSet.length === 0) return null;
 
-    if (openCell({ row: currentObj.row, col: currentObj.col + 1 }))
-      neighbors.push({ row: currentObj.row, col: currentObj.col + 1 });
+  let bestIdx = 0;
+  let bestF = Infinity;
+  astarOpenSet.forEach((cell, i) => {
+    const f = astarFScore.get(`${cell.row},${cell.col}`);
+    if (f < bestF) {
+      bestF = f;
+      bestIdx = i;
+    }
+  });
+  return astarOpenSet[bestIdx];
+}
 
-    if (openCell({ row: currentObj.row, col: currentObj.col - 1 }))
-      neighbors.push({ row: currentObj.row, col: currentObj.col - 1 });
-
-    neighbors.forEach((neighbor) => {
-      const tentativeG = gScores.get(`${currentObj.row},${currentObj.col}`) + 1;
-      const currentG =
-        gScores.get(`${neighbor.row},${neighbor.col}`) ?? Infinity;
-      if (tentativeG < currentG) {
-        cameFrom.set(`${neighbor.row},${neighbor.col}`, currentObj);
-        gScores.set(`${neighbor.row},${neighbor.col}`, tentativeG);
-        fScores.set(
-          `${neighbor.row},${neighbor.col}`,
-          tentativeG + heuristic(neighbor),
-        );
-
-        if (
-          !openSet.some(
-            (cell) => cell.row === neighbor.row && cell.col === neighbor.col,
-          )
-        ) {
-          openSet.push(neighbor);
-        }
-      }
-    });
+// Walks a cell back through astarCameFrom to the search's root, collecting
+// every ancestor along the way — [cell, its parent, its grandparent, ...].
+function buildAncestorChain(cell) {
+  const chain = [cell];
+  let key = `${cell.row},${cell.col}`;
+  while (astarCameFrom.has(key)) {
+    const parent = astarCameFrom.get(key);
+    chain.push(parent);
+    key = `${parent.row},${parent.col}`;
   }
+  return chain;
+}
 
-  return [];
+// The robot can only step to an adjacent cell, but the next A* target can
+// be anywhere already explored. This finds the route between them through
+// already-visited cells: walk `from`'s ancestor chain until it reaches a
+// cell that's also an ancestor of `to` (their lowest common ancestor —
+// where the two cells' paths-from-the-root first diverged), then walk
+// forward down to `to`. Returns the list of cells to physically move
+// through, in order (not including `from` itself, since the robot's
+// already there).
+function computeWalkRoute(from, to) {
+  const fromChain = buildAncestorChain(from);
+  const toChain = buildAncestorChain(to);
+  const toChainKeys = new Set(toChain.map((cell) => `${cell.row},${cell.col}`));
+
+  const lcaIndex = fromChain.findIndex((cell) =>
+    toChainKeys.has(`${cell.row},${cell.col}`),
+  );
+  const lca = fromChain[lcaIndex];
+
+  // Backward leg: from's ancestors up to (and including) the LCA, skipping
+  // `from` itself.
+  const backward = fromChain.slice(1, lcaIndex + 1);
+
+  // Forward leg: to's ancestors back up to (but not including) the LCA,
+  // then reversed into root-to-leaf order.
+  const toLcaIndex = toChain.findIndex(
+    (cell) => cell.row === lca.row && cell.col === lca.col,
+  );
+  const forward = toChain.slice(0, toLcaIndex).reverse();
+
+  return [...backward, ...forward];
 }
 
 function openCell(cellObj) {
-  if (cellObj.row < 0 || cellObj.row > 14) return false;
-  if (cellObj.col < 0 || cellObj.col > 14) return false;
+  if (cellObj.row < 0 || cellObj.row >= GRID_SIZE) return false;
+  if (cellObj.col < 0 || cellObj.col >= GRID_SIZE) return false;
   if (grid[cellObj.row][cellObj.col]) return false;
 
   return true;
@@ -801,9 +809,9 @@ function heuristic(cellObj) {
 }
 
 // Figures out which of up/down/left/right leads from one cell to an
-// adjacent one — used to translate findPathAStar()'s path into actual
-// turns, since moveForward() only knows how to move in `heading`'s
-// direction, not "go to this specific cell."
+// adjacent one — used to translate a move-route cell into an actual turn,
+// since moveForward() only knows how to move in `heading`'s direction,
+// not "go to this specific cell."
 function directionBetween(from, to) {
   for (const dir of DIR_ORDER) {
     const delta = DELTAS[dir];
@@ -830,10 +838,13 @@ function applyAction(action) {
 let SOLVE_STEP_DELAY_MS = 200; // pause between steps; adjustable via the Speed slider
 
 // Safety net against an infinite loop in a buggy algorithm — scales with
-// the maze's area so a bigger maze (more cells to possibly backtrack
-// through) doesn't get flagged as "stuck" too early.
+// the maze's area so a bigger maze doesn't get flagged as "stuck" too
+// early. The x20 multiplier (rather than something closer to x3) is
+// because A*'s physical backtracking can revisit the same cells several
+// times over — measured empirically up to ~9.4x the cell count on a 25x25
+// maze, so this leaves a healthy margin above that.
 function getMaxSolveSteps() {
-  return GRID_SIZE * GRID_SIZE * 3;
+  return GRID_SIZE * GRID_SIZE * 20;
 }
 
 let solving = false;
@@ -870,28 +881,38 @@ function autoSolveStep() {
   solveTimeoutId = setTimeout(autoSolveStep, SOLVE_STEP_DELAY_MS);
 }
 
-// The A* equivalent of the pair above: instead of asking an algorithm what
-// to do at every step, the whole route was already decided once by
-// findPathAStar() before stepping started — each call just turns to face
-// and steps into the next cell in that route.
-let currentPath = [];
-let pathStepIndex = 0;
-
+// The A* equivalent of performRightHandStep(): does one unit of A* work,
+// then physically moves the robot one cell closer to wherever that work
+// points next. "One unit of work" is either continuing a walk already in
+// progress toward a previously chosen target, or — once that walk
+// finishes — a fresh expansion that picks the *next* target.
 function performAStarStep() {
   if (robot.row === END.row && robot.col === END.col) {
     celebrateSolve(`Solved in ${solveStepCount} steps!`);
     return true;
   }
 
-  if (pathStepIndex >= currentPath.length) {
+  if (solveStepCount >= getMaxSolveSteps()) {
     document.getElementById("sensorReadout").textContent =
-      "A* didn't reach the end — check findPathAStar().";
+      `Stopped after ${getMaxSolveSteps()} steps without reaching the end.`;
     return true;
   }
 
-  const nextCell = currentPath[pathStepIndex];
-  pathStepIndex++;
+  if (!astarSearchStarted) {
+    resetAStarSearch();
+  }
 
+  if (astarMoveQueue.length === 0) {
+    const target = expandAStarStep();
+    if (!target) {
+      document.getElementById("sensorReadout").textContent =
+        "A* explored everywhere it can reach without finding the end — check expandAStarStep().";
+      return true;
+    }
+    astarMoveQueue = computeWalkRoute({ row: robot.row, col: robot.col }, target);
+  }
+
+  const nextCell = astarMoveQueue.shift();
   const dir = directionBetween(robot, nextCell);
   if (dir) {
     heading = dir;
@@ -932,14 +953,6 @@ function startSolving() {
   setAlgorithmMenuDisabled(true);
 
   if (getSelectedAlgorithm() === "astar") {
-    currentPath = findPathAStar();
-    pathStepIndex = 1; // index 0 is the robot's current cell, already where it's standing
-    if (currentPath.length === 0) {
-      document.getElementById("sensorReadout").textContent =
-        "A* returned no path — check findPathAStar().";
-      stopSolving();
-      return;
-    }
     autoSolveStepAStar();
   } else {
     autoSolveStep();
@@ -960,18 +973,6 @@ function stepOnce() {
   if (solving) return; // don't fight with the auto-solver while it's running
 
   if (getSelectedAlgorithm() === "astar") {
-    if (currentPath.length === 0) {
-      // Nothing computed yet for this run — plan it once, same as Solve
-      // would, but still only take a single step.
-      currentPath = findPathAStar();
-      pathStepIndex = 1; // index 0 is the robot's current cell, already where it's standing
-      solveStepCount = 0;
-      if (currentPath.length === 0) {
-        document.getElementById("sensorReadout").textContent =
-          "A* returned no path — check findPathAStar().";
-        return;
-      }
-    }
     performAStarStep();
   } else {
     performRightHandStep();
@@ -1006,8 +1007,12 @@ function resetRobot() {
   shortestPath = [];
   showSolutionPaths = false;
   solveFlashStart = null; // cancel any in-progress flash animation
-  currentPath = [];
-  pathStepIndex = 0;
+  astarOpenSet = [];
+  astarGScore = new Map();
+  astarFScore = new Map();
+  astarCameFrom = new Map();
+  astarMoveQueue = [];
+  astarSearchStarted = false;
   solveStepCount = 0;
   document.getElementById("sensorReadout").classList.remove("solved");
 }
@@ -1057,7 +1062,34 @@ function resizeMaze(newSize) {
 
   resetRobot();
   draw();
+  updateLayoutMode();
 }
+
+// Measures the actual rendered widths of the algorithm menu, the main
+// content (whose width is dominated by the canvas, which varies a lot with
+// the Size slider), and the colors/parameters column, then switches to the
+// stacked layout the moment they'd genuinely overflow the window — rather
+// than guessing at a fixed CSS breakpoint that wouldn't track the canvas's
+// actual size. Colors and parameters share one column in the wide layout
+// (see .page's grid-template-areas), so that column's width is whichever
+// of the two is wider, not their sum.
+const PAGE_GAP = 36; // must match the column gap value in .page's CSS
+
+function updateLayoutMode() {
+  const page = document.querySelector(".page");
+  const algorithms = document.querySelector(".algorithms");
+  const main = document.querySelector("main");
+  const legend = document.querySelector(".legend");
+  const parameters = document.querySelector(".parameters");
+
+  const rightColumnWidth = Math.max(legend.offsetWidth, parameters.offsetWidth);
+  const requiredWidth =
+    algorithms.offsetWidth + main.offsetWidth + rightColumnWidth + PAGE_GAP * 2;
+
+  page.classList.toggle("stacked-layout", requiredWidth > window.innerWidth);
+}
+
+window.addEventListener("resize", updateLayoutMode);
 
 const sizeSlider = document.getElementById("sizeSlider");
 const sizeValue = document.getElementById("sizeValue");
@@ -1148,3 +1180,4 @@ const prefersLight = window.matchMedia("(prefers-color-scheme: light)").matches;
 applyTheme(prefersLight);
 
 draw();
+updateLayoutMode();

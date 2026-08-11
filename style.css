@@ -154,24 +154,51 @@ canvas {
 }
 
 /* --- Page layout --- */
-/* Algorithm menu on the left, main content in the middle, color sidebar on
-   the right (that's just DOM order, since flex lays children out left to
-   right). Wraps to a stacked layout on narrow screens instead of
-   squeezing everything. */
+/* Algorithm menu on the left, main content in the middle, colors and
+   parameters stacked on the right — a grid (rather than nesting colors +
+   parameters in their own wrapper div) so each panel can be independently
+   rearranged at the "doesn't fit" breakpoint below. Repeating "algorithms"
+   and "main" across both area rows makes each of them span both rows,
+   while "colors" and "params" occupy the two halves of that same right
+   column, one above the other. script.js measures the actual rendered
+   widths (the maze's canvas size varies a lot with the Size slider) and
+   toggles .stacked-layout when they'd overflow the window — see
+   updateLayoutMode(). */
 .page {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto auto auto;
+  grid-template-areas:
+    "algorithms main colors"
+    "algorithms main params";
   justify-content: center;
   align-items: center; /* centers the (shorter) sidebars against the (taller) main content */
-  gap: 36px;
-  flex-wrap: wrap;
+  gap: 20px 36px;
 }
 
-/* Stacks the color panel and the parameters panel on top of each other,
-   on the right side, instead of side by side. */
-.right-column {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+.page .algorithms {
+  grid-area: algorithms;
+}
+
+.page main {
+  grid-area: main;
+}
+
+.page .legend {
+  grid-area: colors;
+}
+
+.page .parameters {
+  grid-area: params;
+}
+
+/* When the grid is too large to fit alongside the sidebars, main moves to
+   its own full-width row on top, and all three sidebars share a row
+   underneath, side by side, instead of colors/parameters staying stacked. */
+.page.stacked-layout {
+  grid-template-columns: auto auto auto;
+  grid-template-areas:
+    "main main main"
+    "algorithms colors params";
 }
 
 /* --- Sidebar panels (colors, algorithm) --- */
