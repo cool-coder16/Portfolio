@@ -16,8 +16,8 @@ This is a learning project — I'm new to vibe coding (though I've written code 
 ## Project
 
 - **Stack:** Plain HTML/CSS/JavaScript, rendered with the HTML5 Canvas API. Node.js is only used to run `live-server` (a local dev server with auto-reload) — there's no build step or bundler.
-- **What this app does:** A 2D maze-solving robot simulator. You draw a maze by clicking grid cells, drive a robot through it manually, then write the wall-following logic that lets it solve the maze on its own.
-- **Current stage:** static shell — grid renders and walls can be toggled by clicking, no robot yet.
+- **What this app does:** A small portfolio site (`index.html` = Home, `projects.html` = Projects list) showcasing a 2D maze-solving robot simulator (`maze-robot.html`). The maze app: draw or randomly generate a maze, drive the robot manually or watch it auto-solve with a hand-written right-hand-rule wall follower or a real step-by-step A* search, with customizable colors and an adjustable maze size/solve speed.
+- **Current stage:** maze app is feature-complete (Days 1-5 of the original plan, plus A*, hover tooltips, size/speed controls, and dark/light mode); portfolio Home/Projects pages are scaffolded with placeholder bio text still to be filled in.
 
 ## Style
 

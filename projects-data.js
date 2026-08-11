@@ -1,0 +1,50 @@
+// Single shared list of portfolio projects, loaded on every page. Add a
+// new project here and it automatically shows up both in the Projects
+// page grid and the navbar's Projects dropdown — nothing else to update.
+const PROJECTS = [
+  {
+    name: "Maze Robot Simulator",
+    url: "maze-robot.html",
+    description:
+      "A 2D robot that solves mazes it's never seen, using either a hand-written right-hand-rule wall follower or a real step-by-step A* search. Draw your own maze or generate a random one, watch it solve live, and customize every color.",
+  },
+];
+
+// Fills in the navbar's Projects dropdown, if this page has one.
+function renderNavProjectsDropdown() {
+  const menu = document.getElementById("navProjectsDropdown");
+  if (!menu) return;
+
+  for (const project of PROJECTS) {
+    const link = document.createElement("a");
+    link.href = project.url;
+    link.className = "dropdown-item";
+    link.textContent = project.name;
+    menu.appendChild(link);
+  }
+}
+
+// Fills in the Projects page's card grid, if this page has one.
+function renderProjectGrid() {
+  const grid = document.getElementById("projectGrid");
+  if (!grid) return;
+
+  for (const project of PROJECTS) {
+    const card = document.createElement("a");
+    card.href = project.url;
+    card.className = "project-card";
+
+    const heading = document.createElement("h2");
+    heading.textContent = project.name;
+
+    const description = document.createElement("p");
+    description.textContent = project.description;
+
+    card.appendChild(heading);
+    card.appendChild(description);
+    grid.appendChild(card);
+  }
+}
+
+renderNavProjectsDropdown();
+renderProjectGrid();

@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Maze Robot Simulator</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <nav class="navbar">
+      <a href="index.html" class="nav-brand">
+        <img src="favicon.svg" alt="Logo" class="nav-logo" />
+        <span class="nav-title">Vivaan Loiwal</span>
+      </a>
+      <div class="nav-links">
+        <a href="index.html" class="nav-link">Home</a>
+        <div class="nav-item-dropdown">
+          <a href="projects.html" class="nav-link active">Projects</a>
+          <div class="dropdown-menu" id="navProjectsDropdown"></div>
+        </div>
+      </div>
+      <button id="themeToggle" class="btn theme-toggle">Light Mode</button>
+    </nav>
+
+    <p class="breadcrumb">
+      <a href="projects.html">&larr; Back to Projects</a>
+    </p>
+
+    <div class="page">
+      <aside class="algorithms sidebar-panel">
+        <h2>Algorithm</h2>
+
+        <label class="panel-item algorithm-option">
+          <input type="radio" name="algorithm" value="right-hand" checked />
+          Right-Hand Rule
+          <span class="tooltip"
+            >The classic manual maze solving algorithm, prioritizing having a
+            wall on the right side</span
+          >
+        </label>
+        <label class="panel-item algorithm-option">
+          <input type="radio" name="algorithm" value="astar" />
+          A*
+          <span class="tooltip"
+            >An advanced algorithm, using the length of the path until each
+            square combined with the distance from the end to make
+            decisions</span
+          >
+        </label>
+      </aside>
+
+      <main>
+        <h1>Maze Robot Simulator</h1>
+        <p>
+          Click cells to add or remove walls. Use arrow keys to drive the robot
+          from start to end.
+        </p>
+
+        <canvas id="mazeCanvas"></canvas>
+
+        <p id="sensorReadout" class="readout"></p>
+
+        <div class="controls">
+          <button id="stepButton" class="btn">Step</button>
+          <button id="solveButton" class="btn">Solve</button>
+          <button id="resetButton" class="btn">Reset Robot</button>
+          <button id="resetMazeButton" class="btn">Reset Maze</button>
+          <button id="randomizeButton" class="btn">Randomize Maze</button>
+        </div>
+      </main>
+
+      <aside class="legend sidebar-panel">
+        <h2>Colors</h2>
+
+        <label class="panel-item">
+          <input
+            type="color"
+            class="legend-swatch"
+            id="color-wall"
+            value="#f0f0f0"
+          />
+          Wall
+        </label>
+        <label class="panel-item">
+          <input
+            type="color"
+            class="legend-swatch"
+            id="color-start"
+            value="#3aa0ff"
+          />
+          Start
+        </label>
+        <label class="panel-item">
+          <input
+            type="color"
+            class="legend-swatch"
+            id="color-end"
+            value="#ffcc33"
+          />
+          End
+        </label>
+        <label class="panel-item">
+          <input
+            type="color"
+            class="legend-swatch"
+            id="color-robot"
+            value="#ffffff"
+          />
+          Robot
+        </label>
+        <label class="panel-item">
+          <input
+            type="color"
+            class="legend-swatch"
+            id="color-robot-highlight"
+            value="#ff3b3b"
+          />
+          Robot Highlight
+        </label>
+        <label class="panel-item">
+          <input
+            type="color"
+            class="legend-swatch"
+            id="color-sensor-clear"
+            value="#39ff88"
+          />
+          Sensor: clear
+        </label>
+        <label class="panel-item">
+          <input
+            type="color"
+            class="legend-swatch"
+            id="color-sensor-wall"
+            value="#ff3b3b"
+          />
+          Sensor: wall
+        </label>
+        <label class="panel-item">
+          <input
+            type="color"
+            class="legend-swatch"
+            id="color-actual-path"
+            value="#ffcc33"
+          />
+          Actual path taken
+        </label>
+        <label class="panel-item">
+          <input
+            type="color"
+            class="legend-swatch"
+            id="color-shortest-path"
+            value="#3aa0ff"
+          />
+          Shortest path
+        </label>
+
+        <button id="resetColorsButton" class="btn">Reset All Colors</button>
+      </aside>
+
+      <aside class="parameters sidebar-panel">
+        <h2>Parameters</h2>
+
+        <div class="slider-item">
+          <label for="sizeSlider"
+            >Size: <span id="sizeValue">15×15</span></label
+          >
+          <input
+            type="range"
+            id="sizeSlider"
+            min="9"
+            max="51"
+            step="2"
+            value="15"
+          />
+        </div>
+
+        <div class="slider-item">
+          <label for="speedSlider"
+            >Speed: <span id="speedValue">5</span> steps/sec</label
+          >
+          <input
+            type="range"
+            id="speedSlider"
+            min="1"
+            max="20"
+            step="1"
+            value="5"
+          />
+        </div>
+      </aside>
+    </div>
+
+    <script src="projects-data.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>

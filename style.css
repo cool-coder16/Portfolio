@@ -34,13 +34,128 @@ body {
   background: var(--bg);
   color: var(--text);
   margin: 0;
-  /* min-height: 100vh (100% of the browser window's height) plus centering
-     the body's own content is what actually centers things against the
-     whole page, rather than just against other elements next to it. */
+  /* Column layout: navbar docked to the top at its natural height, then
+     whichever page content follows (.page / .home / .projects) grows to
+     fill the rest via flex: 1 and centers itself within that space. No
+     align-items override here, so children default to stretch (full
+     width) — needed for the navbar to span edge-to-edge. */
   min-height: 100vh;
   display: flex;
+  flex-direction: column;
+}
+
+/* --- Navbar --- */
+/* Shared across all pages. The theme toggle lives inside it (on the right,
+   via justify-content: space-between) instead of being separately
+   fixed-positioned, so it can't ever overlap page content. */
+.navbar {
+  display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.nav-links {
+  display: flex;
+  gap: 20px;
+}
+
+.nav-link {
+  color: var(--text);
+  text-decoration: none;
+  font-size: 14px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding-bottom: 4px;
+  border-bottom: 2px solid transparent;
+}
+
+.nav-link:hover {
+  color: var(--accent);
+}
+
+.nav-link.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* Logo + site title slot, far left of the navbar. The logo currently
+   reuses favicon.svg as a placeholder — swap the <img> src in each page's
+   navbar once you have a real logo, and replace the "[Your Site Title]"
+   text with your actual site name. */
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--text);
+}
+
+.nav-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+}
+
+.nav-title {
+  font-size: 15px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* --- Projects dropdown --- */
+/* Pure CSS hover popover, same technique as the algorithm tooltips on the
+   maze page — no JS needed to show/hide it. Its contents (one link per
+   project) are filled in by renderNavProjectsDropdown() in
+   projects-data.js, so it can never list a different set of projects than
+   the actual Projects page grid. */
+.nav-item-dropdown {
+  position: relative;
+}
+
+.dropdown-menu {
+  visibility: hidden;
+  opacity: 0;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 200px;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  /* Extra top padding (instead of margin-top) keeps this box touching the
+     link directly above it — no gap for the mouse to cross where :hover
+     would drop, which is what was making the menu disappear right as you
+     tried to move into it. */
+  padding: 14px 6px;
+  display: flex;
+  flex-direction: column;
+  z-index: 20;
+  transition: opacity 0.15s ease;
+}
+
+.nav-item-dropdown:hover .dropdown-menu {
+  visibility: visible;
+  opacity: 1;
+}
+
+.dropdown-item {
+  display: block;
+  padding: 8px 10px;
+  color: var(--text);
+  text-decoration: none;
+  font-size: 13px;
+  text-transform: none;
+  letter-spacing: normal;
+  border-radius: 4px;
+  text-align: left;
+}
+
+.dropdown-item:hover {
+  background: var(--btn-hover-bg);
+  color: var(--accent);
 }
 
 h1 {
@@ -142,15 +257,13 @@ canvas {
   box-shadow: 0 0 4px rgba(0, 119, 182, 0.45);
 }
 
-/* Fixed in the corner regardless of scroll position or window size. */
+/* Now just a normal item inside .navbar (right-aligned there via
+   justify-content: space-between), rather than separately fixed-positioned
+   — simpler, and it can never overlap page content this way. */
 .theme-toggle {
-  position: fixed;
-  top: 16px;
-  right: 16px;
   margin: 0;
   padding: 6px 14px;
   font-size: 13px;
-  z-index: 10;
 }
 
 /* --- Page layout --- */
@@ -165,13 +278,20 @@ canvas {
    toggles .stacked-layout when they'd overflow the window — see
    updateLayoutMode(). */
 .page {
+  flex: 1; /* fills the space below the navbar, so align-content below can center vertically too */
   display: grid;
   grid-template-columns: auto auto auto;
   grid-template-areas:
     "algorithms main colors"
     "algorithms main params";
   justify-content: center;
-  align-items: center; /* centers the (shorter) sidebars against the (taller) main content */
+  align-items: center; /* centers the (shorter) sidebars against the (taller) main content, within each row */
+  /* Without this, grid rows default to stretching to fill any extra height
+     .page has (from flex: 1) — which was inflating the gap between Colors
+     and Parameters far past the 20px actually specified below.
+     align-content centers the *rows themselves* as one block instead of
+     stretching them apart. */
+  align-content: center;
   gap: 20px 36px;
 }
 
@@ -328,4 +448,98 @@ canvas {
 .legend-swatch::-moz-color-swatch {
   border: none;
   border-radius: 2px;
+}
+
+/* Small "back" link at the top of the maze page, since it's reached by
+   clicking into it from the Projects grid. Sits directly under the navbar
+   (not inside .page's centered grid) so it stays tucked in the top-left
+   corner instead of pushing on or competing with the centered content. */
+.breadcrumb {
+  text-align: left;
+  margin: 0;
+  padding: 10px 24px 0;
+}
+
+.breadcrumb a {
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 13px;
+}
+
+.breadcrumb a:hover {
+  text-decoration: underline;
+}
+
+/* --- Home page --- */
+.home {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 40px 20px;
+}
+
+.home .tagline {
+  font-size: 18px;
+  color: var(--accent);
+  margin: 0;
+}
+
+.home .bio {
+  max-width: 500px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* --- Projects page --- */
+.projects {
+  flex: 1;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 40px 20px;
+}
+
+.project-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+  max-width: 900px;
+  margin: 32px auto 0;
+}
+
+.project-card {
+  display: block;
+  text-align: left;
+  padding: 20px;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  text-decoration: none;
+  color: var(--text);
+  transition:
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.project-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 16px rgba(0, 229, 255, 0.2);
+}
+
+:root.light-theme .project-card:hover {
+  box-shadow: 0 0 12px rgba(0, 119, 182, 0.25);
+}
+
+.project-card h2 {
+  margin: 0 0 8px;
+  color: var(--accent);
+  font-size: 18px;
+}
+
+.project-card p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
 }

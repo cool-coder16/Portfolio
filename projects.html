@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Portfolio — Home</title>
+    <title>Portfolio — Projects</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <link rel="stylesheet" href="style.css" />
   </head>
@@ -13,26 +13,19 @@
         <span class="nav-title">Vivaan Loiwal</span>
       </a>
       <div class="nav-links">
-        <a href="index.html" class="nav-link active">Home</a>
+        <a href="index.html" class="nav-link">Home</a>
         <div class="nav-item-dropdown">
-          <a href="projects.html" class="nav-link">Projects</a>
+          <a href="projects.html" class="nav-link active">Projects</a>
           <div class="dropdown-menu" id="navProjectsDropdown"></div>
         </div>
       </div>
       <button id="themeToggle" class="btn theme-toggle">Light Mode</button>
     </nav>
 
-    <main class="home">
-      <h1>Vivaan Loiwal</h1>
-      <p class="tagline">
-        TODO: write a one-line tagline about yourself — e.g. what you're
-        building, learning, or interested in.
-      </p>
-      <p class="bio">
-        TODO: write a short paragraph about who you are — your interests, what
-        you're currently learning, and what kind of projects you like to build.
-      </p>
-      <a href="projects.html" class="btn">View My Projects</a>
+    <main class="projects">
+      <h1>Projects</h1>
+
+      <div class="project-grid" id="projectGrid"></div>
     </main>
 
     <script src="projects-data.js"></script>
