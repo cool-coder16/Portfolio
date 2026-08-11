@@ -213,7 +213,7 @@ function minimax(board, depth, isMaximizing) {
   for (const col of getValidColumns(board)) {
     const boardCopy = copyBoard(board);
     dropPiece(boardCopy, col, isMaximizing ? AI : PLAYER);
-    score = minimax(boardCopy, depth - 1, !isMaximizing);
+    const score = minimax(boardCopy, depth - 1, !isMaximizing);
     if (isMaximizing) {
       bestScore = score > bestScore ? score : bestScore;
     } else {
