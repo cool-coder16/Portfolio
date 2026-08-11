@@ -18,7 +18,7 @@ const PROJECTS = [
     name: "Inverse Kinematics Calculator",
     url: "ik-calculator.html",
     description:
-      "A robot arm chain that solves its own joint angles to reach a target point. Set the number of arms, each arm's length, and drag the target — the arm's IK solver reaches for it live. Work in progress.",
+      "A robot arm chain that solves its own joint angles to reach a target point, using Cyclic Coordinate Descent with self-collision detection so it can't pass through itself. Set the number of arms, each arm's length, and drag the target — Step or Solve to watch it reach.",
   },
 ];
 
