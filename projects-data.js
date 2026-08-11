@@ -12,13 +12,19 @@ const PROJECTS = [
     name: "PIDF Panel",
     url: "pidf-panel.html",
     description:
-      "A live PIDF controller tuner: adjustable P, I, D, and feedforward (F) gains with a real-time graph of how the system responds. Work in progress.",
+      "A live PIDF controller tuner: adjustable P, I, D, and feedforward (F) gains with a real-time graph of how the system responds. Includes tooltips explaining each term and an Auto-Tune button that searches for good gains automatically.",
   },
   {
     name: "Inverse Kinematics Calculator",
     url: "ik-calculator.html",
     description:
       "A robot arm chain that solves its own joint angles to reach a target point, using Cyclic Coordinate Descent with self-collision detection so it can't pass through itself. Set the number of arms, each arm's length, and drag the target — Step or Solve to watch it reach.",
+  },
+  {
+    name: "Tiny Neural Network Classifier",
+    url: "nn-classifier.html",
+    description:
+      "A small hand-written neural network that learns to separate two classes of points, with the decision boundary shading live as it trains. Click to place points or load a preset (including XOR, which no straight line can separate) and watch it learn. Work in progress.",
   },
 ];
 
