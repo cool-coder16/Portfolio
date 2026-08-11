@@ -174,6 +174,7 @@ function performBubbleSortStep() {
   bubbleSortStep(bars);
   draw();
   sortStepCount++;
+  setReadout(`Pass ${sortStepCount}`);
   return false;
 }
 
@@ -201,6 +202,7 @@ function performMergeSortStep() {
   mergeSortStep(bars);
   draw();
   sortStepCount++;
+  setReadout(`Pass ${sortStepCount}`);
   return false;
 }
 
@@ -330,8 +332,8 @@ function valueToHeight(value) {
 }
 
 const SCENE_THEME = {
-  dark: { background: "#1c212b", text: "#d7dde5" },
-  light: { background: "#ffffff", text: "#1c212b" },
+  dark: { background: "#1c212b" },
+  light: { background: "#ffffff" },
 };
 
 function draw() {
@@ -356,12 +358,6 @@ function draw() {
       height,
     );
   });
-
-  ctx.fillStyle = theme.text;
-  ctx.font = "12px monospace";
-  ctx.textAlign = "right";
-  ctx.fillText(`passes: ${sortStepCount}`, canvas.width - 8, canvas.height - 8);
-  ctx.textAlign = "left";
 }
 
 shuffleBars(Number(numBarsInput.value));

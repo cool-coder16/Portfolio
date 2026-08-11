@@ -356,13 +356,13 @@ canvas {
   visibility: hidden;
 }
 
-/* NN Classifier only — its sidebar sits closer to the canvas than the
-   default 36px gap the other single-sidebar pages use. */
+/* Opt-in for pages whose sidebar should sit closer to the canvas than the
+   default 36px gap (currently NN Classifier and Rainbow Sort Visualizer). */
 .page.tight-gap {
   gap: 16px;
 }
 
-/* Shifts the sidebar itself further right, NN page only. position:
+/* Shifts the sidebar itself further right on those same pages. position:
    relative moves it purely visually — it doesn't change the space the
    flex row reserves for it, so the canvas's centering (which depends on
    that reserved width matching the ghost spacer's) is untouched. */
