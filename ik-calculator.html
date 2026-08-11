@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Inverse Kinematics Calculator</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <nav class="navbar">
+      <a href="index.html" class="nav-brand">
+        <img src="favicon.svg" alt="Logo" class="nav-logo" />
+        <span class="nav-title">Vivaan Loiwal</span>
+      </a>
+      <div class="nav-links">
+        <a href="index.html" class="nav-link">Home</a>
+        <div class="nav-item-dropdown">
+          <a href="projects.html" class="nav-link active">Projects</a>
+          <div class="dropdown-menu" id="navProjectsDropdown"></div>
+        </div>
+      </div>
+      <button id="themeToggle" class="btn theme-toggle">Light Mode</button>
+    </nav>
+
+    <p class="breadcrumb">
+      <a href="projects.html">&larr; Back to Projects</a>
+    </p>
+
+    <div class="page">
+      <aside class="controls-panel sidebar-panel">
+        <h2>Arm Setup</h2>
+
+        <div class="slider-item">
+          <label for="numArmsInput"
+            >Number of Arms: <span id="numArmsValue">3</span></label
+          >
+          <input
+            type="range"
+            id="numArmsInput"
+            min="1"
+            max="6"
+            step="1"
+            value="3"
+          />
+        </div>
+
+        <div id="armLengthInputs" class="arm-length-list"></div>
+
+        <h2>Target</h2>
+
+        <div class="slider-item">
+          <label for="targetXInput"
+            >Target X: <span id="targetXValue">120</span></label
+          >
+          <input
+            type="range"
+            id="targetXInput"
+            min="-300"
+            max="300"
+            step="1"
+            value="120"
+          />
+        </div>
+
+        <div class="slider-item">
+          <label for="targetYInput"
+            >Target Y: <span id="targetYValue">80</span></label
+          >
+          <input
+            type="range"
+            id="targetYInput"
+            min="-220"
+            max="220"
+            step="1"
+            value="80"
+          />
+        </div>
+      </aside>
+
+      <main>
+        <h1>Inverse Kinematics Calculator</h1>
+        <p>
+          Drag the sliders (or click the canvas) to move the target, and
+          watch the arm solve its own joint angles to reach it.
+        </p>
+
+        <canvas id="ikCanvas" width="640" height="480"></canvas>
+
+        <p id="ikReadout" class="readout">
+          Click anywhere on the canvas to move the target.
+        </p>
+
+        <div class="controls">
+          <button id="solveButton" class="btn">Solve</button>
+          <button id="resetArmButton" class="btn">Reset Arm</button>
+          <button id="resetTargetButton" class="btn">Reset Target</button>
+        </div>
+      </main>
+    </div>
+
+    <script src="projects-data.js"></script>
+    <script src="nav.js"></script>
+    <script src="ik-calculator.js"></script>
+  </body>
+</html>

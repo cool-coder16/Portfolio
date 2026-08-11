@@ -14,6 +14,12 @@ const PROJECTS = [
     description:
       "A live PIDF controller tuner: adjustable P, I, D, and feedforward (F) gains with a real-time graph of how the system responds. Work in progress.",
   },
+  {
+    name: "Inverse Kinematics Calculator",
+    url: "ik-calculator.html",
+    description:
+      "A robot arm chain that solves its own joint angles to reach a target point. Set the number of arms, each arm's length, and drag the target — the arm's IK solver reaches for it live. Work in progress.",
+  },
 ];
 
 // Fills in the navbar's Projects dropdown, if this page has one.

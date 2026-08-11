@@ -388,6 +388,16 @@ canvas {
   accent-color: var(--accent);
 }
 
+/* Holds the dynamically-generated per-arm length sliders on the IK page —
+   same gap/column layout as the slider-items inside it, so growing or
+   shrinking the arm count doesn't change the panel's overall rhythm. */
+.arm-length-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
 /* Dims the whole row (not just the radio itself) while solving locks it. */
 .panel-item:has(input:disabled) {
   opacity: 0.5;
