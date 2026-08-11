@@ -47,7 +47,8 @@ function createNetwork(numHidden) {
 // layer's activations around for backpropagation).
 function predict(network, point) {
   const hiddenActivations = network.hiddenWeights.map((weights, h) => {
-    const z = weights[0] * point.x + weights[1] * point.y + network.hiddenBiases[h];
+    const z =
+      weights[0] * point.x + weights[1] * point.y + network.hiddenBiases[h];
     return sigmoid(z);
   });
 
@@ -72,6 +73,57 @@ function predict(network, point) {
 function trainStep(network, point, label, learningRate) {
   // TODO: replace this with your own backpropagation implementation!
   // The network won't learn until you do — right now this does nothing.
+  // 1. Forward pass — same math as predict(), but keep the hidden
+  //    activations and the final output around, you'll need them below.
+  //      hidden[h] = sigmoid(hiddenWeights[h] . point + hiddenBiases[h])
+  //      output    = sigmoid(sum(hidden[h] * outputWeights[h]) + outputBias)
+  // 2. Output delta — how much, and which way, to nudge the output
+  //    neuron's input so the loss (output - label)^2 shrinks:
+  //      outputDelta = 2 * (output - label) * output * (1 - output)
+  // 3. Hidden deltas — how responsible each hidden neuron was for that
+  //    error, chained back through its own sigmoid:
+  //      hiddenDelta[h] = outputDelta * outputWeights[h] * hidden[h] * (1 - hidden[h])
+  //    Compute these BEFORE step 4 touches outputWeights — they need the
+  //    old values, not the updated ones.
+  // 4. Update the output layer:
+  //      outputWeights[h] -= learningRate * outputDelta * hidden[h]
+  //      outputBias       -= learningRate * outputDelta
+  // 5. Update the hidden layer, same shape as step 4:
+  //      hiddenWeights[h] -= learningRate * hiddenDelta[h] * point
+  //      hiddenBiases[h]  -= learningRate * hiddenDelta[h]
+
+  let hidden = [];
+  for (let i = 0; i < network.hiddenWeights.length; i++) {
+    hidden.push(
+      sigmoid(
+        network.hiddenWeights[i][0] * point.x +
+          network.hiddenWeights[i][1] * point.y +
+          network.hiddenBiases[i],
+      ),
+    );
+  }
+  const output = sigmoid(
+    hidden.reduce(
+      (sum, activation, h) => sum + activation * network.outputWeights[h],
+      network.outputBias,
+    ),
+  );
+
+  const outputDelta = 2 * (output - label) * output * (1 - output);
+  let hiddenDeltas = [];
+  for (let i = 0; i < network.outputWeights.length; i++) {
+    hiddenDeltas.push(
+      outputDelta * network.outputWeights[i] * hidden[i] * (1 - hidden[i]),
+    );
+  }
+
+  for (let i = 0; i < network.outputWeights.length; i++) {
+    network.outputWeights[i] -= learningRate * outputDelta * hidden[i];
+    network.hiddenWeights[i][0] -= learningRate * hiddenDeltas[i] * point.x;
+    network.hiddenWeights[i][1] -= learningRate * hiddenDeltas[i] * point.y;
+    network.hiddenBiases[i] -= learningRate * hiddenDeltas[i];
+  }
+  network.outputBias -= learningRate * outputDelta;
 }
 
 // --- Presets ---
@@ -105,12 +157,20 @@ function makeCirclesPreset() {
   for (let i = 0; i < 25; i++) {
     const angle = Math.random() * Math.PI * 2;
     const radius = Math.random() * 0.3; // inner circle
-    newPoints.push({ x: Math.cos(angle) * radius, y: Math.sin(angle) * radius, label: 0 });
+    newPoints.push({
+      x: Math.cos(angle) * radius,
+      y: Math.sin(angle) * radius,
+      label: 0,
+    });
   }
   for (let i = 0; i < 35; i++) {
     const angle = Math.random() * Math.PI * 2;
     const radius = 0.6 + Math.random() * 0.35; // outer ring
-    newPoints.push({ x: Math.cos(angle) * radius, y: Math.sin(angle) * radius, label: 1 });
+    newPoints.push({
+      x: Math.cos(angle) * radius,
+      y: Math.sin(angle) * radius,
+      label: 1,
+    });
   }
   return newPoints;
 }
@@ -162,7 +222,9 @@ learningRateInput.addEventListener("input", () => {
 
 // --- Class picker ---
 function getSelectedClass() {
-  return Number(document.querySelector('input[name="pointClass"]:checked').value);
+  return Number(
+    document.querySelector('input[name="pointClass"]:checked').value,
+  );
 }
 
 // --- Canvas ---
@@ -176,15 +238,33 @@ const HEATMAP_CELL_SIZE = 10; // px — coarser than 1:1 so the background redra
 // pixels have +y pointing down, so converting between them means flipping
 // the y-axis around the center.
 function toCanvasCoords(mathX, mathY) {
-  return { x: CENTER + mathX * PIXELS_PER_UNIT, y: CENTER - mathY * PIXELS_PER_UNIT };
+  return {
+    x: CENTER + mathX * PIXELS_PER_UNIT,
+    y: CENTER - mathY * PIXELS_PER_UNIT,
+  };
 }
 function toMathCoords(canvasX, canvasY) {
-  return { x: (canvasX - CENTER) / PIXELS_PER_UNIT, y: (CENTER - canvasY) / PIXELS_PER_UNIT };
+  return {
+    x: (canvasX - CENTER) / PIXELS_PER_UNIT,
+    y: (CENTER - canvasY) / PIXELS_PER_UNIT,
+  };
 }
 
 const SCENE_THEME = {
-  dark: { background: "#1c212b", classZero: "#00e5ff", classOne: "#ffcc33", pointBorder: "#0b0e14", text: "#d7dde5" },
-  light: { background: "#ffffff", classZero: "#0077b6", classOne: "#e0a800", pointBorder: "#ffffff", text: "#1c212b" },
+  dark: {
+    background: "#1c212b",
+    classZero: "#00e5ff",
+    classOne: "#ffcc33",
+    pointBorder: "#0b0e14",
+    text: "#d7dde5",
+  },
+  light: {
+    background: "#ffffff",
+    classZero: "#0077b6",
+    classOne: "#e0a800",
+    pointBorder: "#ffffff",
+    text: "#1c212b",
+  },
 };
 
 function hexToRgb(hex) {
@@ -213,7 +293,10 @@ function drawScene() {
   // grid, blended between the two class colors by how confident it is.
   for (let px = 0; px < canvas.width; px += HEATMAP_CELL_SIZE) {
     for (let py = 0; py < canvas.height; py += HEATMAP_CELL_SIZE) {
-      const mathPoint = toMathCoords(px + HEATMAP_CELL_SIZE / 2, py + HEATMAP_CELL_SIZE / 2);
+      const mathPoint = toMathCoords(
+        px + HEATMAP_CELL_SIZE / 2,
+        py + HEATMAP_CELL_SIZE / 2,
+      );
       const guess = predict(network, mathPoint);
       ctx.fillStyle = lerpColor(theme.classZero, theme.classOne, guess);
       ctx.fillRect(px, py, HEATMAP_CELL_SIZE, HEATMAP_CELL_SIZE);
@@ -237,19 +320,25 @@ function drawScene() {
 function updateReadout() {
   const readout = document.getElementById("nnReadout");
   if (points.length === 0) {
-    readout.textContent = "Click the canvas to add points (or load a preset), then Step or Train.";
+    readout.textContent =
+      "Click the canvas to add points (or load a preset), then Step or Train.";
     return;
   }
 
   const loss =
-    points.reduce((sum, point) => sum + (predict(network, point) - point.label) ** 2, 0) /
-    points.length;
+    points.reduce(
+      (sum, point) => sum + (predict(network, point) - point.label) ** 2,
+      0,
+    ) / points.length;
   readout.textContent = `${points.length} point${points.length === 1 ? "" : "s"} — average loss: ${loss.toFixed(4)}`;
 }
 
 canvas.addEventListener("click", (event) => {
   const rect = canvas.getBoundingClientRect();
-  const mathPoint = toMathCoords(event.clientX - rect.left, event.clientY - rect.top);
+  const mathPoint = toMathCoords(
+    event.clientX - rect.left,
+    event.clientY - rect.top,
+  );
   points.push({
     x: Math.max(-1, Math.min(1, mathPoint.x)),
     y: Math.max(-1, Math.min(1, mathPoint.y)),
