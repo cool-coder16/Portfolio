@@ -24,7 +24,13 @@ const PROJECTS = [
     name: "Tiny Neural Network Classifier",
     url: "nn-classifier.html",
     description:
-      "A small hand-written neural network that learns to separate two classes of points, with the decision boundary shading live as it trains. Click to place points or load a preset (including XOR, which no straight line can separate) and watch it learn. Work in progress.",
+      "A small hand-written neural network that learns to separate two classes of points, with the decision boundary shading live as it trains via real backpropagation. Click to place points or load a preset (including XOR, which no straight line can separate) and watch it learn.",
+  },
+  {
+    name: "Rainbow Sort Visualizer",
+    url: "sorting-visualizer.html",
+    description:
+      "Bars colored across the rainbow, shuffled out of order, sorted back into place by a hand-written Bubble Sort or Merge Sort. Step through one pass at a time or watch it run, and compare how many passes each algorithm actually takes. Work in progress.",
   },
 ];
 

@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Rainbow Sort Visualizer</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <nav class="navbar">
+      <a href="index.html" class="nav-brand">
+        <img src="favicon.svg" alt="Logo" class="nav-logo" />
+        <span class="nav-title">Vivaan Loiwal</span>
+      </a>
+      <div class="nav-links">
+        <a href="index.html" class="nav-link">Home</a>
+        <div class="nav-item-dropdown">
+          <a href="projects.html" class="nav-link active">Projects</a>
+          <div class="dropdown-menu" id="navProjectsDropdown"></div>
+        </div>
+      </div>
+      <button id="themeToggle" class="btn theme-toggle">Light Mode</button>
+    </nav>
+
+    <p class="breadcrumb">
+      <a href="projects.html">&larr; Back to Projects</a>
+    </p>
+
+    <div class="page single-sidebar">
+      <aside class="controls-panel sidebar-panel">
+        <h2>Algorithm</h2>
+
+        <label class="panel-item algorithm-option">
+          <input type="radio" name="algorithm" value="bubble" checked />
+          Bubble Sort
+          <span class="tooltip"
+            >Repeatedly steps through the bars, swapping any adjacent pair
+            that's out of order, until a full pass needs no more swaps</span
+          >
+        </label>
+        <label class="panel-item algorithm-option">
+          <input type="radio" name="algorithm" value="merge" />
+          Merge Sort
+          <span class="tooltip"
+            >Splits the bars into smaller and smaller sorted runs, then
+            merges pairs of sorted runs back together, doubling in size
+            each pass</span
+          >
+        </label>
+
+        <h2>Setup</h2>
+
+        <div class="slider-item">
+          <label for="numBarsInput"
+            >Bars: <span id="numBarsValue">16</span></label
+          >
+          <input
+            type="range"
+            id="numBarsInput"
+            min="5"
+            max="40"
+            step="1"
+            value="16"
+          />
+        </div>
+
+        <div class="slider-item">
+          <label for="speedInput"
+            >Speed: <span id="speedValue">5</span> steps/sec</label
+          >
+          <input
+            type="range"
+            id="speedInput"
+            min="1"
+            max="20"
+            step="1"
+            value="5"
+          />
+        </div>
+      </aside>
+
+      <main>
+        <h1>Rainbow Sort Visualizer</h1>
+        <p>
+          Bars shuffled out of rainbow order — Step through one pass at a
+          time, or Sort to watch it run, and see how many passes each
+          algorithm actually takes.
+        </p>
+
+        <canvas id="sortCanvas" width="640" height="400"></canvas>
+
+        <p id="sortReadout" class="readout">
+          Shuffled — press Step or Sort to begin.
+        </p>
+
+        <div class="controls">
+          <button id="stepButton" class="btn">Step</button>
+          <button id="sortButton" class="btn">Sort</button>
+          <button id="resetButton" class="btn">Reset</button>
+          <button id="shuffleButton" class="btn">Shuffle</button>
+        </div>
+      </main>
+
+      <div class="sidebar-spacer" aria-hidden="true"></div>
+    </div>
+
+    <script src="projects-data.js"></script>
+    <script src="nav.js"></script>
+    <script src="sorting-visualizer.js"></script>
+  </body>
+</html>
