@@ -227,10 +227,19 @@ document.getElementById("resetTargetButton").addEventListener("click", () => {
   setTargetAndSliders(DEFAULT_TARGET.x, DEFAULT_TARGET.y);
 });
 
-// The only thing that actually runs the solver — every other control above
-// just sets up the arm/target and waits. Gives solveIKStep() a fresh
-// iteration budget; the animation loop below calls it once per frame until
-// either it converges or that budget runs out.
+// Runs exactly one solveIKStep() pass — the same call the Solve button's
+// animation makes every frame, just a single one instead of a whole budget
+// of them. Skipped while a Solve run is already in progress, so it can't
+// fight with the animation loop over the same jointAngles.
+document.getElementById("stepButton").addEventListener("click", () => {
+  if (iterationsRemaining > 0) return;
+  jointAngles = solveIKStep(jointAngles, armLengths, target);
+});
+
+// The only thing that starts a full multi-frame solve — every other
+// control above just sets up the arm/target and waits. Gives
+// solveIKStep() a fresh iteration budget; the animation loop below calls
+// it once per frame until either it converges or that budget runs out.
 document.getElementById("solveButton").addEventListener("click", () => {
   iterationsRemaining = MAX_ITERATIONS;
 });
