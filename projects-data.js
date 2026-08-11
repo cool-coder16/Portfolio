@@ -36,7 +36,7 @@ const PROJECTS = [
     name: "Connect Four",
     url: "connect-four.html",
     description:
-      "Play Connect Four against a hand-written minimax AI, with an adjustable search depth. Work in progress.",
+      "Play Connect Four against a hand-written minimax AI: it searches ahead through possible future moves, alternating between picking its own best move and assuming you'll play your best move too, then falls back to a heuristic once it runs out of lookahead. Click a column to drop a piece, with a live preview of where it'll land, and adjust the search depth to make the AI think further ahead (and play stronger, at the cost of a longer pause).",
   },
 ];
 
