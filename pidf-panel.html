@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>PIDF Panel</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <nav class="navbar">
+      <a href="index.html" class="nav-brand">
+        <img src="favicon.svg" alt="Logo" class="nav-logo" />
+        <span class="nav-title">Vivaan Loiwal</span>
+      </a>
+      <div class="nav-links">
+        <a href="index.html" class="nav-link">Home</a>
+        <div class="nav-item-dropdown">
+          <a href="projects.html" class="nav-link active">Projects</a>
+          <div class="dropdown-menu" id="navProjectsDropdown"></div>
+        </div>
+      </div>
+      <button id="themeToggle" class="btn theme-toggle">Light Mode</button>
+    </nav>
+
+    <p class="breadcrumb">
+      <a href="projects.html">&larr; Back to Projects</a>
+    </p>
+
+    <div class="page">
+      <aside class="controls-panel sidebar-panel">
+        <h2>Gains</h2>
+
+        <div class="slider-item">
+          <div class="slider-label-row">
+            <label for="pSlider">P: <span id="pValue">1.0</span></label>
+            <span class="help-icon" tabindex="0"
+              >?<span class="tooltip"
+                >The <span class="accent-text">Proportional</span> value,
+                which is multiplied by the current error</span
+              ></span
+            >
+          </div>
+          <input
+            type="range"
+            id="pSlider"
+            min="0"
+            max="20"
+            step="0.1"
+            value="1"
+          />
+        </div>
+
+        <div class="slider-item">
+          <div class="slider-label-row">
+            <label for="iSlider">I: <span id="iValue">0.00</span></label>
+            <span class="help-icon" tabindex="0"
+              >?<span class="tooltip"
+                >The <span class="accent-text">Integral</span> value, which
+                is multiplied by the total error over time</span
+              ></span
+            >
+          </div>
+          <input
+            type="range"
+            id="iSlider"
+            min="0"
+            max="10"
+            step="0.05"
+            value="0"
+          />
+        </div>
+
+        <div class="slider-item">
+          <div class="slider-label-row">
+            <label for="dSlider">D: <span id="dValue">0.00</span></label>
+            <span class="help-icon" tabindex="0"
+              >?<span class="tooltip"
+                >The <span class="accent-text">Derivative</span> value,
+                which is multiplied by the change in error over time</span
+              ></span
+            >
+          </div>
+          <input
+            type="range"
+            id="dSlider"
+            min="0"
+            max="10"
+            step="0.05"
+            value="0"
+          />
+        </div>
+
+        <div class="slider-item">
+          <div class="slider-label-row">
+            <label for="fSlider">F: <span id="fValue">0.0</span></label>
+            <span class="help-icon" tabindex="0"
+              >?<span class="tooltip"
+                >The <span class="accent-text">Feed Forward</span> value,
+                which is multiplied by the target value</span
+              ></span
+            >
+          </div>
+          <input
+            type="range"
+            id="fSlider"
+            min="0"
+            max="2"
+            step="0.1"
+            value="0"
+          />
+        </div>
+      </aside>
+
+      <main>
+        <h1>PIDF Panel</h1>
+        <p>
+          Adjust the P, I, D, and F gains and watch how the system responds.
+        </p>
+
+        <canvas id="pidfCanvas" width="600" height="360"></canvas>
+
+        <p id="pidfReadout" class="readout">
+          Gold dashed line = setpoint. Cyan line = the system's actual position.
+        </p>
+
+        <div class="controls">
+          <button id="resetTimeButton" class="btn">Reset Time</button>
+          <button id="resetGainsButton" class="btn">Reset Gains</button>
+          <button id="autoTuneButton" class="btn">Auto-Tune</button>
+        </div>
+      </main>
+    </div>
+
+    <script src="projects-data.js"></script>
+    <script src="nav.js"></script>
+    <script src="pidf-panel.js"></script>
+  </body>
+</html>

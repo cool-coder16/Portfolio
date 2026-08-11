@@ -373,6 +373,16 @@ canvas {
   font-size: 14px;
 }
 
+/* Row holding a gain's label text and its "?" help icon — justify-content:
+   space-between pins the icon to the right edge of the box, level with the
+   text, instead of tucked right after it. */
+.slider-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
 .slider-item input[type="range"] {
   width: 100%;
   accent-color: var(--accent);
@@ -415,7 +425,50 @@ canvas {
   transition: opacity 0.15s ease;
 }
 
+/* Highlights the term a tooltip is defining (e.g. "Proportional" inside
+   the P tooltip) with a literal background highlight in the accent color
+   — var(--bg) for the text color is a small trick: it's dark in dark mode
+   and light in light mode, which happens to give solid contrast against
+   the accent color in both cases without needing a dedicated variable. */
+.accent-text {
+  background-color: var(--accent);
+  color: var(--bg);
+  padding: 0 3px;
+  border-radius: 2px;
+}
+
 .algorithm-option:hover .tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Small "?" hint next to a gain label — reuses the same .tooltip popover
+   as the algorithm dropdown above, just anchored to a tiny circle instead
+   of a whole row. tabindex on the icon plus :focus here means keyboard
+   users (Tab key) can reveal it too, not just mouse hover. */
+.help-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  border: 1px solid var(--panel-border);
+  border-radius: 50%;
+  font-size: 10px;
+  color: var(--text);
+  cursor: help;
+}
+
+.help-icon:hover,
+.help-icon:focus {
+  border-color: var(--accent);
+  color: var(--accent);
+  outline: none;
+}
+
+.help-icon:hover .tooltip,
+.help-icon:focus .tooltip {
   visibility: visible;
   opacity: 1;
 }

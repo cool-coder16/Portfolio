@@ -9,10 +9,10 @@ const PROJECTS = [
       "A 2D robot that solves mazes it's never seen, using either a hand-written right-hand-rule wall follower or a real step-by-step A* search. Draw your own maze or generate a random one, watch it solve live, and customize every color.",
   },
   {
-    name: "PID Panel",
-    url: "pid-panel.html",
+    name: "PIDF Panel",
+    url: "pidf-panel.html",
     description:
-      "A live PID controller tuner: adjustable P, I, and D gains with a real-time graph of how the system responds. Work in progress.",
+      "A live PIDF controller tuner: adjustable P, I, D, and feedforward (F) gains with a real-time graph of how the system responds. Work in progress.",
   },
 ];
 
