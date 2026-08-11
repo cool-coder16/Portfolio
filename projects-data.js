@@ -30,7 +30,13 @@ const PROJECTS = [
     name: "Rainbow Sort Visualizer",
     url: "sorting-visualizer.html",
     description:
-      "Bars colored across the rainbow, shuffled out of order, sorted back into place by a hand-written Bubble Sort or Merge Sort. Step through one pass at a time or watch it run, and compare how many passes each algorithm actually takes. Work in progress.",
+      "Bars colored across the rainbow, shuffled out of order, sorted back into place by a hand-written Bubble Sort or Merge Sort. Step through one pass at a time or watch it run, and compare how many passes each algorithm actually takes.",
+  },
+  {
+    name: "Connect Four",
+    url: "connect-four.html",
+    description:
+      "Play Connect Four against a hand-written minimax AI, with an adjustable search depth. Work in progress.",
   },
 ];
 

@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Connect Four</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <nav class="navbar">
+      <a href="index.html" class="nav-brand">
+        <img src="favicon.svg" alt="Logo" class="nav-logo" />
+        <span class="nav-title">Vivaan Loiwal</span>
+      </a>
+      <div class="nav-links">
+        <a href="index.html" class="nav-link">Home</a>
+        <div class="nav-item-dropdown">
+          <a href="projects.html" class="nav-link active">Projects</a>
+          <div class="dropdown-menu" id="navProjectsDropdown"></div>
+        </div>
+      </div>
+      <button id="themeToggle" class="btn theme-toggle">Light Mode</button>
+    </nav>
+
+    <p class="breadcrumb">
+      <a href="projects.html">&larr; Back to Projects</a>
+    </p>
+
+    <div class="page single-sidebar">
+      <aside class="controls-panel sidebar-panel">
+        <h2>AI Setup</h2>
+
+        <div class="slider-item">
+          <label for="depthInput"
+            >Search Depth: <span id="depthValue">4</span></label
+          >
+          <input
+            type="range"
+            id="depthInput"
+            min="1"
+            max="6"
+            step="1"
+            value="4"
+          />
+        </div>
+      </aside>
+
+      <main>
+        <h1>Connect Four</h1>
+        <p>
+          You're Red, the AI is Yellow. Click a column to drop a piece — the
+          AI searches ahead with minimax to pick its move.
+        </p>
+
+        <canvas id="connectFourCanvas" width="490" height="490"></canvas>
+
+        <p id="gameReadout" class="readout">
+          Your turn — click a column.
+        </p>
+
+        <div class="controls">
+          <button id="newGameButton" class="btn">New Game</button>
+        </div>
+      </main>
+
+      <div class="sidebar-spacer" aria-hidden="true"></div>
+    </div>
+
+    <script src="projects-data.js"></script>
+    <script src="nav.js"></script>
+    <script src="connect-four.js"></script>
+  </body>
+</html>
