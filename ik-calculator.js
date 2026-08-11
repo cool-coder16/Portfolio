@@ -353,6 +353,25 @@ function drawScene(joints, distance) {
   drawTargetMarker(toCanvasCoords(target.x, target.y), theme.target);
 }
 
+// Converts radians to degrees and wraps into (-180, 180] — jointAngles[i]
+// itself can drift well outside that range after enough solve iterations
+// (each one just adds a delta, with nothing capping the running total),
+// even though the arm's actual pose only ever depends on the angle modulo
+// a full turn. This is purely for display; the stored angle is untouched.
+function toDisplayDegrees(radians) {
+  let degrees = ((radians * 180) / Math.PI) % 360;
+  if (degrees > 180) degrees -= 360;
+  if (degrees <= -180) degrees += 360;
+  return degrees;
+}
+
+function updateJointAnglesReadout(jointAngles) {
+  const readout = document.getElementById("jointAnglesReadout");
+  readout.textContent = jointAngles
+    .map((angle, i) => `Arm ${i + 1}: ${toDisplayDegrees(angle).toFixed(1)}°`)
+    .join("   ");
+}
+
 function updateReadout(distance, totalReach) {
   const readout = document.getElementById("ikReadout");
   const targetDistanceFromBase = Math.hypot(target.x, target.y);
@@ -393,6 +412,7 @@ function animationLoop() {
   const totalReach = armLengths.reduce((sum, length) => sum + length, 0);
   drawScene(joints, distance);
   updateReadout(distance, totalReach);
+  updateJointAnglesReadout(jointAngles);
 
   requestAnimationFrame(animationLoop);
 }

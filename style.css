@@ -321,6 +321,56 @@ canvas {
     "algorithms colors params";
 }
 
+/* Pages with just one sidebar (PIDF Panel, IK Calculator, NN Classifier)
+   switch away from the maze's grid entirely — a plain flex row of
+   [sidebar, main, invisible spacer] with a gap that's directly
+   controllable (overridden below by .tight-gap). The maze's CSS Grid
+   setup was built around its 2-row, 3-sidebar template; forcing a 2-item
+   page through it left .controls-panel auto-placed into just the first
+   row instead of the full height next to main. */
+.page.single-sidebar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 36px;
+}
+
+/* Flex items shrink to fit their row by default. The canvas inside main
+   has a fixed pixel width and can't give up any space, so without this,
+   all of that squeezing landed on the sidebar instead — narrowing it past
+   what its own contents (like the NN page's row of preset buttons) need,
+   wrapping them instead of just letting the sidebar keep its natural
+   width. Same reasoning applies to the invisible spacer below, so it
+   can't get squeezed out of matching the sidebar's width either. */
+.page.single-sidebar .controls-panel,
+.page.single-sidebar .sidebar-spacer {
+  flex-shrink: 0;
+}
+
+/* An empty box on the other side of main, kept exactly as wide as the
+   real sidebar by syncSidebarSpacer() in nav.js. Without it, centering
+   [sidebar, main] as a pair leaves main (and the canvas inside it) sitting
+   left of the page's true center, shifted by roughly half the sidebar's
+   width — this cancels that out so the canvas itself stays centered. */
+.sidebar-spacer {
+  visibility: hidden;
+}
+
+/* NN Classifier only — its sidebar sits closer to the canvas than the
+   default 36px gap the other single-sidebar pages use. */
+.page.tight-gap {
+  gap: 16px;
+}
+
+/* Shifts the sidebar itself further right, NN page only. position:
+   relative moves it purely visually — it doesn't change the space the
+   flex row reserves for it, so the canvas's centering (which depends on
+   that reserved width matching the ghost spacer's) is untouched. */
+.page.tight-gap .controls-panel {
+  position: relative;
+  left: 100px;
+}
+
 /* --- Sidebar panels (colors, algorithm) --- */
 /* Shared look for both side panels; content differs but the box, heading,
    and row styling are identical. */
@@ -402,6 +452,18 @@ canvas {
 .panel-item:has(input:disabled) {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Small color dot next to a class radio on the NN classifier page — its
+   color is set inline per class (matches that class's actual point/
+   heatmap color), so it stays a fixed identifier rather than flipping
+   with the theme like the rest of the chrome does. */
+.class-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+  border: 1px solid var(--swatch-border);
 }
 
 /* --- Algorithm description tooltip --- */

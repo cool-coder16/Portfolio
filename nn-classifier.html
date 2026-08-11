@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Tiny Neural Network Classifier</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <nav class="navbar">
+      <a href="index.html" class="nav-brand">
+        <img src="favicon.svg" alt="Logo" class="nav-logo" />
+        <span class="nav-title">Vivaan Loiwal</span>
+      </a>
+      <div class="nav-links">
+        <a href="index.html" class="nav-link">Home</a>
+        <div class="nav-item-dropdown">
+          <a href="projects.html" class="nav-link active">Projects</a>
+          <div class="dropdown-menu" id="navProjectsDropdown"></div>
+        </div>
+      </div>
+      <button id="themeToggle" class="btn theme-toggle">Light Mode</button>
+    </nav>
+
+    <p class="breadcrumb">
+      <a href="projects.html">&larr; Back to Projects</a>
+    </p>
+
+    <div class="page single-sidebar tight-gap">
+      <aside class="controls-panel sidebar-panel">
+        <h2>Network</h2>
+
+        <div class="slider-item">
+          <label for="hiddenNeuronsInput"
+            >Hidden Neurons: <span id="hiddenNeuronsValue">4</span></label
+          >
+          <input
+            type="range"
+            id="hiddenNeuronsInput"
+            min="2"
+            max="8"
+            step="1"
+            value="4"
+          />
+        </div>
+
+        <div class="slider-item">
+          <label for="learningRateInput"
+            >Learning Rate: <span id="learningRateValue">0.50</span></label
+          >
+          <input
+            type="range"
+            id="learningRateInput"
+            min="0.05"
+            max="2"
+            step="0.05"
+            value="0.5"
+          />
+        </div>
+
+        <h2>Class</h2>
+
+        <label class="panel-item">
+          <input type="radio" name="pointClass" value="0" checked />
+          <span class="class-swatch" style="background: #00e5ff"></span>
+          Class A
+        </label>
+        <label class="panel-item">
+          <input type="radio" name="pointClass" value="1" />
+          <span class="class-swatch" style="background: #ffcc33"></span>
+          Class B
+        </label>
+
+        <h2>Presets</h2>
+
+        <div class="controls">
+          <button id="xorPresetButton" class="btn">XOR</button>
+          <button id="circlesPresetButton" class="btn">Circles</button>
+          <button id="blobsPresetButton" class="btn">Blobs</button>
+        </div>
+      </aside>
+
+      <main>
+        <h1>Tiny Neural Network Classifier</h1>
+        <p>
+          Click the canvas to add points of the selected class (or load a
+          preset), then Step or Train a small neural network to tell them
+          apart. The background shading is the network's current guess —
+          cyan means "Class A", gold means "Class B".
+        </p>
+
+        <canvas id="nnCanvas" width="500" height="500"></canvas>
+
+        <p id="nnReadout" class="readout">
+          Click the canvas to add points (or load a preset), then Step or
+          Train.
+        </p>
+
+        <div class="controls">
+          <button id="stepButton" class="btn">Step</button>
+          <button id="trainButton" class="btn">Train</button>
+          <button id="resetNetworkButton" class="btn">Reset Network</button>
+          <button id="clearPointsButton" class="btn">Clear Points</button>
+        </div>
+      </main>
+
+      <div class="sidebar-spacer" aria-hidden="true"></div>
+    </div>
+
+    <script src="projects-data.js"></script>
+    <script src="nav.js"></script>
+    <script src="nn-classifier.js"></script>
+  </body>
+</html>
