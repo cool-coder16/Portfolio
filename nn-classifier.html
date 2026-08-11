@@ -31,9 +31,19 @@
         <h2>Network</h2>
 
         <div class="slider-item">
-          <label for="hiddenNeuronsInput"
-            >Hidden Neurons: <span id="hiddenNeuronsValue">4</span></label
-          >
+          <div class="slider-label-row">
+            <label for="hiddenNeuronsInput"
+              >Hidden Neurons: <span id="hiddenNeuronsValue">4</span></label
+            >
+            <span class="help-icon" tabindex="0"
+              >?<span class="tooltip"
+                >The number of <span class="accent-text">Hidden Neurons</span>
+                between the inputs and the output. Each one looks at both
+                coordinates independently, so more of them let the decision
+                boundary bend into more complex shapes</span
+              ></span
+            >
+          </div>
           <input
             type="range"
             id="hiddenNeuronsInput"
@@ -45,9 +55,19 @@
         </div>
 
         <div class="slider-item">
-          <label for="learningRateInput"
-            >Learning Rate: <span id="learningRateValue">0.50</span></label
-          >
+          <div class="slider-label-row">
+            <label for="learningRateInput"
+              >Learning Rate: <span id="learningRateValue">0.50</span></label
+            >
+            <span class="help-icon" tabindex="0"
+              >?<span class="tooltip"
+                >The <span class="accent-text">Learning Rate</span> value,
+                which controls how big a step each weight takes during
+                training. Too small and it learns slowly; too large and it
+                can overshoot and never settle</span
+              ></span
+            >
+          </div>
           <input
             type="range"
             id="learningRateInput"
