@@ -12,12 +12,20 @@ function applyTheme(lightMode) {
 themeToggleButton.addEventListener("click", () => {
   const isLight = document.documentElement.classList.contains("light-theme");
   applyTheme(!isLight);
+  // Persisted so a manual toggle survives navigating to another page —
+  // without this, every new page re-derived the theme from scratch and
+  // ignored whatever the user had just picked.
+  localStorage.setItem("theme", isLight ? "dark" : "light");
 });
 
-// Default to whatever the user's OS/browser is already set to — same
-// reasoning as script.js's version: read once at load, don't fight a
-// manual toggle if the system setting changes later.
-const prefersLight = window.matchMedia("(prefers-color-scheme: light)").matches;
+// A saved manual choice always wins. Only when there isn't one yet (first
+// visit, or localStorage unavailable) do we fall back to the OS/browser
+// setting — read once at load either way, so we don't fight a manual
+// toggle if the system setting changes later.
+const savedTheme = localStorage.getItem("theme");
+const prefersLight =
+  savedTheme === "light" ||
+  (savedTheme === null && window.matchMedia("(prefers-color-scheme: light)").matches);
 applyTheme(prefersLight);
 
 // On single-sidebar pages (PIDF Panel, IK Calculator, NN Classifier), an

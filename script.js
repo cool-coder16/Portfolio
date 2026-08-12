@@ -1170,13 +1170,21 @@ function applyTheme(lightMode) {
 themeToggleButton.addEventListener("click", () => {
   applyTheme(!isLightMode);
   draw();
+  // Persisted so a manual toggle survives navigating to another page —
+  // without this, every new page re-derived the theme from scratch and
+  // ignored whatever the user had just picked.
+  localStorage.setItem("theme", isLightMode ? "light" : "dark");
 });
 
-// Default to whatever the user's OS/browser is already set to, rather than
-// always starting in dark mode. This only reads it once at load — if the
-// user then toggles manually, we respect that choice instead of flipping
-// the theme out from under them if their system setting changes later.
-const prefersLight = window.matchMedia("(prefers-color-scheme: light)").matches;
+// A saved manual choice always wins. Only when there isn't one yet (first
+// visit, or localStorage unavailable) do we fall back to the OS/browser
+// setting, rather than always starting in dark mode — read once at load
+// either way, so we don't fight a manual toggle if the system setting
+// changes later.
+const savedTheme = localStorage.getItem("theme");
+const prefersLight =
+  savedTheme === "light" ||
+  (savedTheme === null && window.matchMedia("(prefers-color-scheme: light)").matches);
 applyTheme(prefersLight);
 
 draw();
