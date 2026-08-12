@@ -236,6 +236,7 @@ canvas {
   padding: 8px 20px;
   margin-top: 12px;
   cursor: pointer;
+  text-decoration: none; /* only matters for the one <a class="btn"> (Home's "View My Projects") — <button> elements never had an underline to begin with */
 }
 
 .btn:hover {
