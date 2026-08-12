@@ -44,6 +44,12 @@ const PROJECTS = [
     description:
       "A metronome you can tap along to freehand: pick a tempo and a grid resolution, tap Spacebar in time with the click, and a hand-written quantization algorithm figures out which beat each tap was aiming for and scores how close it landed. Work in progress.",
   },
+  {
+    name: "Dungeon Generator",
+    url: "dungeon-generator.html",
+    description:
+      "A rectangle recursively splits into smaller ones, each leaf becomes a room, and a hand-written algorithm connects them all with corridors — Binary Space Partitioning, the technique behind a lot of real roguelike dungeon generators. Step through the split one node at a time, or watch it generate. Work in progress.",
+  },
 ];
 
 // Fills in the navbar's Projects dropdown, if this page has one.

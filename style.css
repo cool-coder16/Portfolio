@@ -432,8 +432,8 @@ canvas {
 }
 
 /* Opt-in for pages whose sidebar should sit closer to the canvas than the
-   default 36px gap (currently NN Classifier, Rainbow Sort Visualizer, and
-   Rhythm Trainer). */
+   default 36px gap (currently NN Classifier, Rainbow Sort Visualizer,
+   Rhythm Trainer, and the Dungeon Generator). */
 .page.tight-gap {
   gap: 16px;
 }
