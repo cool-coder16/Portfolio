@@ -38,6 +38,12 @@ const PROJECTS = [
     description:
       "Play Connect Four against a hand-written minimax AI, alternating between its own best move and yours as it searches ahead, then falling back to a heuristic once lookahead runs out. Click a column to drop a piece (with a live landing preview) and adjust how far ahead it searches.",
   },
+  {
+    name: "Rhythm Trainer",
+    url: "rhythm-trainer.html",
+    description:
+      "A metronome you can tap along to freehand: pick a tempo and a grid resolution, tap Spacebar in time with the click, and a hand-written quantization algorithm figures out which beat each tap was aiming for and scores how close it landed. Work in progress.",
+  },
 ];
 
 // Fills in the navbar's Projects dropdown, if this page has one.

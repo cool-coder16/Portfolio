@@ -194,6 +194,80 @@ canvas {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
 }
 
+/* Rhythm Trainer only — after Stop, the canvas itself grows wide enough
+   (via canvas.width in JS) to lay out the whole recording at a fixed
+   scale, rather than just the last few seconds. This wrapper is what
+   makes that scrollable instead of just overflowing the page. */
+.rhythm-canvas-wrapper {
+  /* Fixed, not just max-width: 100% — that's relative to main's own
+     width, which isn't fixed in this layout, so it was growing right
+     along with the canvas instead of actually clipping/scrolling it.
+     644px, not 640px — canvas's global border (2px solid, both sides)
+     adds 4px on top of its own 640px width attribute, so 640px here was
+     just barely too narrow and forced a scrollbar even at the live size. */
+  width: 644px;
+  max-width: 100%;
+  /* A block element with a fixed width isn't centered by body's
+     text-align: center the way the bare canvas was before — that only
+     centers inline content, and wrapping it in a div made it a block. */
+  margin: 0 auto;
+  overflow-x: auto;
+  /* Styled scrollbar, since the default browser one clashes with the
+     page's theme. scrollbar-width/scrollbar-color cover Firefox; the
+     ::-webkit-scrollbar-* pseudo-elements below cover Chrome/Safari/Edge
+     — no single standard covers both, so both are needed. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) var(--panel-bg);
+}
+
+.rhythm-canvas-wrapper::-webkit-scrollbar {
+  height: 10px;
+}
+
+.rhythm-canvas-wrapper::-webkit-scrollbar-track {
+  background: var(--panel-bg);
+}
+
+.rhythm-canvas-wrapper::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border-radius: 5px;
+}
+
+/* Explains the tap colors used once a recording's been scored. Colors are
+   hardcoded to match ACCURACY_COLORS in rhythm-trainer.js exactly — same
+   reasoning as the rainbow hues on the sorting page staying fixed rather
+   than shifting with the theme, since these represent data, not chrome. */
+.rhythm-legend {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin-top: 10px;
+  font-size: 13px;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* Missed-beat marker — an outline instead of a fill, matching how it's
+   actually drawn on the canvas (an empty circle, not a solid dot), in the
+   same accent blue the beat lines themselves use. */
+.legend-dot-outline {
+  background: transparent;
+  border: 2px solid var(--accent);
+  box-sizing: border-box;
+}
+
 .readout {
   font-size: 16px;
   letter-spacing: 1px;
@@ -358,7 +432,8 @@ canvas {
 }
 
 /* Opt-in for pages whose sidebar should sit closer to the canvas than the
-   default 36px gap (currently NN Classifier and Rainbow Sort Visualizer). */
+   default 36px gap (currently NN Classifier, Rainbow Sort Visualizer, and
+   Rhythm Trainer). */
 .page.tight-gap {
   gap: 16px;
 }
@@ -439,6 +514,20 @@ canvas {
   accent-color: var(--accent);
 }
 
+/* The Rhythm Trainer's subdivision dropdown reuses .slider-item purely
+   for the label/spacing layout, not for an actual slider — this keeps it
+   visually consistent with one anyway. */
+.slider-item select {
+  width: 100%;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 4px;
+  padding: 6px 8px;
+}
+
 /* Holds the dynamically-generated per-arm length sliders on the IK page —
    same gap/column layout as the slider-items inside it, so growing or
    shrinking the arm count doesn't change the panel's overall rhythm. */
@@ -465,6 +554,28 @@ canvas {
   border-radius: 50%;
   display: inline-block;
   border: 1px solid var(--swatch-border);
+}
+
+/* The Rhythm Trainer's "< 120 >" BPM control — a plain slider doesn't fit
+   a value musicians think of as an exact number, not a position along a
+   range, so this is a number flanked by step buttons instead. */
+.tempo-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  width: 100%;
+}
+
+.tempo-stepper .btn {
+  margin-top: 0;
+  padding: 4px 14px;
+}
+
+#tempoValue {
+  font-size: 22px;
+  min-width: 3ch;
+  text-align: center;
 }
 
 /* --- Algorithm description tooltip --- */

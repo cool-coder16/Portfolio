@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Rhythm Trainer</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <nav class="navbar">
+      <a href="index.html" class="nav-brand">
+        <img src="favicon.svg" alt="Logo" class="nav-logo" />
+        <span class="nav-title">Vivaan Loiwal</span>
+      </a>
+      <div class="nav-links">
+        <a href="index.html" class="nav-link">Home</a>
+        <div class="nav-item-dropdown">
+          <a href="projects.html" class="nav-link active">Projects</a>
+          <div class="dropdown-menu" id="navProjectsDropdown"></div>
+        </div>
+      </div>
+      <button id="themeToggle" class="btn theme-toggle">Light Mode</button>
+    </nav>
+
+    <p class="breadcrumb">
+      <a href="projects.html">&larr; Back to Projects</a>
+    </p>
+
+    <div class="page single-sidebar tight-gap">
+      <aside class="controls-panel sidebar-panel">
+        <h2>Tempo</h2>
+
+        <div class="tempo-stepper">
+          <button id="tempoDownButton" class="btn">&minus;</button>
+          <span id="tempoValue">120</span>
+          <button id="tempoUpButton" class="btn">+</button>
+        </div>
+
+        <h2>Scoring</h2>
+
+        <div class="slider-item">
+          <label for="subdivisionSelect">Grid</label>
+          <select id="subdivisionSelect">
+            <option value="1">Quarter Notes</option>
+            <option value="2" selected>Eighth Notes</option>
+            <option value="4">Sixteenth Notes</option>
+            <option value="3">Eighth Note Triplets</option>
+          </select>
+        </div>
+      </aside>
+
+      <main>
+        <h1>Rhythm Trainer</h1>
+        <p>
+          Press Start (or Enter) — you'll get one measure to find the
+          tempo, then tap Spacebar in time with the click. Press Stop (or
+          Enter) when you're done to see your score. Consistently early or
+          late? Press Calibrate to correct for it.
+        </p>
+
+        <div class="rhythm-canvas-wrapper">
+          <canvas id="rhythmCanvas" width="640" height="300"></canvas>
+        </div>
+
+        <div class="rhythm-legend">
+          <span class="legend-item">
+            <span class="legend-dot" style="background: #39ff88"></span>Great
+            timing
+          </span>
+          <span class="legend-item">
+            <span class="legend-dot" style="background: #ffcc33"></span>OK
+            timing
+          </span>
+          <span class="legend-item">
+            <span class="legend-dot" style="background: #ff3b3b"></span>Off
+            timing
+          </span>
+          <span class="legend-item">
+            <span class="legend-dot legend-dot-outline"></span>Missed beat
+          </span>
+        </div>
+
+        <p id="rhythmReadout" class="readout">
+          Press Start, then tap Spacebar along with the click.
+        </p>
+
+        <div class="controls">
+          <button id="startStopButton" class="btn">Start</button>
+          <button id="calibrateButton" class="btn">Calibrate</button>
+          <button id="clearButton" class="btn">Clear</button>
+        </div>
+      </main>
+
+      <div class="sidebar-spacer" aria-hidden="true"></div>
+    </div>
+
+    <script src="projects-data.js"></script>
+    <script src="nav.js"></script>
+    <script src="rhythm-trainer.js"></script>
+  </body>
+</html>
