@@ -219,54 +219,64 @@ function shadeColor(hex, percent) {
   return `rgb(${r}, ${g}, ${b})`;
 }
 
-function drawColumn(col, row, rawHeight, theme) {
-  const band = getBiomeBand(rawHeight);
-  const topColor = theme[band.colorKey];
+// Water always renders at a fixed, flat height, regardless of how deep the
+// underlying noise dips below it — otherwise every underwater column would
+// sit at its own random depth, showing up as little pits and steps instead
+// of one flat surface. Every other biome just renders at its own raw
+// height.
+//
+// Checking band.colorKey (what getBiomeBand() actually decided) instead of
+// comparing rawHeight against water's level directly matters once water
+// isn't guaranteed to be the lowest band: if water gets dragged to a
+// HIGHER position, its level becomes a big number, and a raw
+// `rawHeight <= waterLevel` check would flatten every column below that —
+// including ones an earlier, lower band already claimed — instead of only
+// the columns actually colored as water.
+function getRenderHeight(rawHeight, band) {
+  return band.colorKey === "water"
+    ? biomeLevels[biomeOrder.indexOf("water")]
+    : rawHeight;
+}
 
-  // Water always renders at a fixed, flat height, regardless of how deep
-  // the underlying noise dips below it — otherwise every underwater column
-  // would sit at its own random depth, showing up as little pits and steps
-  // instead of one flat surface. Every other biome just renders at its own
-  // raw height.
-  //
-  // Checking band.colorKey (what getBiomeBand() actually decided) instead
-  // of comparing rawHeight against water's level directly matters once
-  // water isn't guaranteed to be the lowest band: if water gets dragged to
-  // a HIGHER position, its level becomes a big number, and a raw
-  // `rawHeight <= waterLevel` check would flatten every column below that
-  // — including ones an earlier, lower band already claimed — instead of
-  // only the columns actually colored as water.
-  const renderHeight =
-    band.colorKey === "water"
-      ? biomeLevels[biomeOrder.indexOf("water")]
-      : rawHeight;
-
+// The 7 points that make up a column's shape: the raised top diamond's 4
+// corners, plus the 2 base corners its visible side faces reach down to.
+// Shared by drawColumn() (which fills these as 3 faces) and
+// getColumnAtPoint() (which uses the same points to build a hit-test
+// silhouette) — computing them in one place keeps the hoverable area
+// pixel-exact to what's actually drawn on screen.
+function computeColumnCorners(col, row, renderHeight) {
   const base = isoBaseCenter(col, row);
   const heightPixels = renderHeight * BLOCK_H;
   const top = { x: base.x, y: base.y - heightPixels };
 
-  // Top diamond's four corners, plus the two base corners the side faces
-  // need to reach down to (south and the two side corners double as both
-  // the top face's corners and the side faces' top edge).
-  const topN = { x: top.x, y: top.y - TILE_H };
-  const topE = { x: top.x + TILE_W, y: top.y };
-  const topS = { x: top.x, y: top.y + TILE_H };
-  const topW = { x: top.x - TILE_W, y: top.y };
-  const baseS = { x: base.x, y: base.y + TILE_H };
-  const baseW = { x: base.x - TILE_W, y: base.y };
-  const baseE = { x: base.x + TILE_W, y: base.y };
+  return {
+    topN: { x: top.x, y: top.y - TILE_H },
+    topE: { x: top.x + TILE_W, y: top.y },
+    topS: { x: top.x, y: top.y + TILE_H },
+    topW: { x: top.x - TILE_W, y: top.y },
+    baseS: { x: base.x, y: base.y + TILE_H },
+    baseW: { x: base.x - TILE_W, y: base.y },
+    baseE: { x: base.x + TILE_W, y: base.y },
+  };
+}
+
+function drawColumn(col, row, rawHeight, theme) {
+  const band = getBiomeBand(rawHeight);
+  const topColor = theme[band.colorKey];
+  const renderHeight = getRenderHeight(rawHeight, band);
+  const c = computeColumnCorners(col, row, renderHeight);
 
   const leftColor = shadeColor(topColor, -0.25);
   const rightColor = shadeColor(topColor, -0.45);
 
   // Left (west-facing) side
-  fillFace([topW, topS, baseS, baseW], leftColor);
+  fillFace([c.topW, c.topS, c.baseS, c.baseW], leftColor);
 
   // Right (east-facing) side
-  fillFace([topS, topE, baseE, baseS], rightColor);
+  fillFace([c.topS, c.topE, c.baseE, c.baseS], rightColor);
 
   // Top face, drawn last so it cleanly overlaps both side faces' top edges
-  fillFace([topN, topE, topS, topW], topColor);
+  fillFace([c.topN, c.topE, c.topS, c.topW], topColor);
 }
 
 // Fills a face polygon and strokes it with the same color. Two adjacent
@@ -315,6 +325,70 @@ function draw() {
     }
   }
 }
+
+// --- Hover readout ---
+// Hit-tests the mouse position against every column's silhouette (the
+// same 6-point outline drawColumn() fills — see computeColumnCorners()),
+// checking nearer columns first, and returns the first one the point
+// actually falls inside. Even at the largest grid size (30x30 = 900
+// columns) this is cheap enough to brute-force on every mousemove,
+// rather than working out an exact inverse of the isometric projection.
+function getColumnAtPoint(x, y) {
+  if (heightMap.length === 0) return null;
+
+  // Front-to-back: larger (row + col) sits closer to the viewer (drawn
+  // later, on top, in draw()) — checking those first means a nearer
+  // column's silhouette wins over a farther column it happens to overlap.
+  const maxSum = (GRID_SIZE - 1) * 2;
+  for (let sum = maxSum; sum >= 0; sum--) {
+    const rowStart = Math.max(0, sum - (GRID_SIZE - 1));
+    const rowEnd = Math.min(sum, GRID_SIZE - 1);
+    for (let row = rowStart; row <= rowEnd; row++) {
+      const col = sum - row;
+      const rawHeight = heightMap[row][col];
+      const band = getBiomeBand(rawHeight);
+      const renderHeight = getRenderHeight(rawHeight, band);
+      const c = computeColumnCorners(col, row, renderHeight);
+
+      const silhouette = new Path2D();
+      silhouette.moveTo(c.topN.x, c.topN.y);
+      silhouette.lineTo(c.topE.x, c.topE.y);
+      silhouette.lineTo(c.baseE.x, c.baseE.y);
+      silhouette.lineTo(c.baseS.x, c.baseS.y);
+      silhouette.lineTo(c.baseW.x, c.baseW.y);
+      silhouette.lineTo(c.topW.x, c.topW.y);
+      silhouette.closePath();
+
+      if (ctx.isPointInPath(silhouette, x, y)) return { rawHeight, band };
+    }
+  }
+  return null;
+}
+
+const DEFAULT_READOUT_TEXT =
+  "Hand-written 2D Perlin noise, remapped into block heights — hit Generate for a new seed.";
+const terrainReadout = document.getElementById("terrainReadout");
+
+canvas.addEventListener("mousemove", (event) => {
+  // Mouse coordinates come in CSS pixels; the canvas's internal drawing
+  // surface is measured in its own pixels (canvas.width/height) — the
+  // scale factor converts one to the other, and is 1 unless the canvas is
+  // ever displayed at a different size than its width/height attributes.
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const x = (event.clientX - rect.left) * scaleX;
+  const y = (event.clientY - rect.top) * scaleY;
+
+  const hit = getColumnAtPoint(x, y);
+  terrainReadout.textContent = hit
+    ? `Height ${hit.rawHeight} — ${hit.band.label}`
+    : DEFAULT_READOUT_TEXT;
+});
+
+canvas.addEventListener("mouseleave", () => {
+  terrainReadout.textContent = DEFAULT_READOUT_TEXT;
+});
 
 document.getElementById("regenerateButton").addEventListener("click", () => {
   noiseSeed = Math.floor(Math.random() * 100000);

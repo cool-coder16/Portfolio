@@ -42,19 +42,19 @@ const PROJECTS = [
     name: "Rhythm Trainer",
     url: "rhythm-trainer.html",
     description:
-      "A metronome you can tap along to freehand: pick a tempo and a grid resolution, tap Spacebar in time with the click, and a hand-written quantization algorithm figures out which beat each tap was aiming for and scores how close it landed. Work in progress.",
+      "A metronome you can tap along to freehand: pick a tempo and a grid resolution, tap Spacebar in time with the click, and a hand-written quantization algorithm figures out which beat each tap was aiming for and scores how close it landed.",
   },
   {
     name: "Dungeon Generator",
     url: "dungeon-generator.html",
     description:
-      "A rectangle recursively splits into smaller ones, each leaf becomes a room, and a hand-written algorithm connects them all with corridors — Binary Space Partitioning, the technique behind a lot of real roguelike dungeon generators. Step through the split one node at a time, or watch it generate. Work in progress.",
+      "A rectangle recursively splits into smaller ones, each leaf becomes a room, and a hand-written algorithm connects them all with corridors — Binary Space Partitioning, the technique behind a lot of real roguelike dungeon generators. Step through the split one node at a time, or watch it generate.",
   },
   {
     name: "Minecraft Terrain Generator",
     url: "minecraft-terrain.html",
     description:
-      "A grid of isometric blocks stacked into hills and valleys with hand-written 2D Perlin noise, so the terrain rises and falls smoothly instead of looking like random static — Minecraft-style, right down to the blocky shading and a drag-to-reorder stack of biome colors. Hit Generate for a new seed. Work in progress.",
+      "A grid of isometric blocks stacked into hills and valleys with hand-written 2D Perlin noise, so the terrain rises and falls smoothly instead of looking like random static — Minecraft-style, right down to the blocky shading and a drag-to-reorder stack of biome colors. Hover a block to see its height and biome, or hit Generate for a new seed.",
   },
 ];
 
