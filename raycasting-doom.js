@@ -15,7 +15,22 @@ const CELL_STAIRS_DOWN = 3;
 const MAP_ROWS = 12;
 const MAP_COLS = 12;
 const NUM_FLOORS = 10;
-const TORCHES_PER_FLOOR = 4;
+const TREASURES_PER_FLOOR = 3;
+
+// Both torch count and torch size grow with floor index, so the climb
+// gets visibly busier/bolder near the top instead of every floor feeling
+// identical.
+const TORCHES_BASE = 3;
+const TORCH_SIZE_BASE = 0.3; // world units, floor 1
+const TORCH_SIZE_GROWTH = 0.03; // world units added per floor
+
+function torchesForFloor(index) {
+  return TORCHES_BASE + Math.floor(index * 0.7);
+}
+
+function torchSizeForFloor(index) {
+  return TORCH_SIZE_BASE + index * TORCH_SIZE_GROWTH;
+}
 
 // --- Map randomizer ---
 // Fills a fresh grid with border walls, then scatters random single-cell
@@ -139,10 +154,37 @@ function pickTorchSpot(map) {
   return { ...chosen, lit: false };
 }
 
+// Picks `count` random open floor cells for treasures — skipping cells
+// near anything reserved (stairs, the starting corner) the same way
+// generateRandomMap() keeps walls off those spots, and removing each
+// chosen cell from the candidate pool as it's picked so two treasures can
+// never land on top of each other.
+function pickTreasureSpots(map, count, reservedCells) {
+  const candidates = [];
+  for (let row = 1; row < MAP_ROWS - 1; row++) {
+    for (let col = 1; col < MAP_COLS - 1; col++) {
+      if (map[row][col] !== CELL_FLOOR) continue;
+      const tooClose = reservedCells.some(
+        (cell) => Math.abs(cell.row - row) <= 1 && Math.abs(cell.col - col) <= 1,
+      );
+      if (!tooClose) candidates.push({ row, col });
+    }
+  }
+
+  const treasures = [];
+  for (let i = 0; i < count && candidates.length > 0; i++) {
+    const index = Math.floor(Math.random() * candidates.length);
+    const cell = candidates.splice(index, 1)[0];
+    treasures.push({ row: cell.row, col: cell.col, collected: false });
+  }
+  return treasures;
+}
+
 // Builds one fully-generated floor: walls, its up/down staircases (the
 // bottom floor has no down-stairs, the top floor has no up-stairs), the
-// entry points used when arriving via either staircase, and a handful of
-// wall-mounted torches.
+// entry points used when arriving via either staircase, a handful of
+// wall-mounted torches (more of them, and bigger, on higher floors — see
+// torchesForFloor()/torchSizeForFloor()), and a few treasures to collect.
 function generateFloor(index) {
   const hasUp = index < NUM_FLOORS - 1;
   const hasDown = index > 0;
@@ -169,10 +211,13 @@ function generateFloor(index) {
   if (downCell) map[downCell.row][downCell.col] = CELL_STAIRS_DOWN;
 
   const torches = [];
-  for (let i = 0; i < TORCHES_PER_FLOOR; i++) {
+  const torchCount = torchesForFloor(index);
+  for (let i = 0; i < torchCount; i++) {
     const spot = pickTorchSpot(map);
     if (spot) torches.push(spot);
   }
+
+  const treasures = pickTreasureSpots(map, TREASURES_PER_FLOOR, reservedCells);
 
   return {
     map,
@@ -181,6 +226,8 @@ function generateFloor(index) {
     entryFromBelow: downCell ? findEntryNear(map, downCell) : null,
     entryFromAbove: upCell ? findEntryNear(map, upCell) : null,
     torches,
+    treasures,
+    torchSize: torchSizeForFloor(index),
   };
 }
 
@@ -189,6 +236,22 @@ for (let i = 0; i < NUM_FLOORS; i++) levels.push(generateFloor(i));
 
 let currentLevelIndex = 0;
 let MAP = levels[currentLevelIndex].map;
+
+// Highest floor (1-indexed) on which every torch has ever been lit,
+// persisted so it survives a reload — same localStorage pattern the
+// site's theme toggle already uses. Checked whenever a torch gets lit
+// (see checkLaserHitsTorch()), since that's the only moment "all lit"
+// could newly become true.
+let bestFloor = Number(localStorage.getItem("raycastingBestFloor")) || 0;
+
+function checkAllTorchesLit() {
+  const level = levels[currentLevelIndex];
+  const allLit = level.torches.length > 0 && level.torches.every((t) => t.lit);
+  if (allLit && currentLevelIndex + 1 > bestFloor) {
+    bestFloor = currentLevelIndex + 1;
+    localStorage.setItem("raycastingBestFloor", String(bestFloor));
+  }
+}
 
 function isWall(x, y) {
   const col = Math.floor(x);
@@ -272,6 +335,20 @@ function updateStairsHint() {
     cell === CELL_STAIRS_UP ? "up" : cell === CELL_STAIRS_DOWN ? "down" : null;
 }
 
+// Collects any not-yet-collected treasure sitting in the player's current
+// cell — a plain position check, no raycasting involved, since picking
+// something up only needs to know where the player IS, not what they can
+// see.
+function updateTreasurePickup() {
+  const col = Math.floor(player.x);
+  const row = Math.floor(player.y);
+  for (const treasure of levels[currentLevelIndex].treasures) {
+    if (!treasure.collected && treasure.row === row && treasure.col === col) {
+      treasure.collected = true;
+    }
+  }
+}
+
 function updatePlayer() {
   let moveStep = 0;
   if (heldKeys.has("ArrowUp") || heldKeys.has("KeyW")) moveStep += MOVE_SPEED;
@@ -289,6 +366,7 @@ function updatePlayer() {
     player.angle += ROTATE_SPEED;
 
   updateStairsHint();
+  updateTreasurePickup();
 }
 
 // --- Raycasting (YOU write this) ---
@@ -454,8 +532,13 @@ const minimapCtx = minimapCanvas.getContext("2d");
 const MINIMAP_CELL = minimapCanvas.width / MAP_COLS;
 const floorLabel = document.getElementById("floorLabel");
 const doomReadout = document.getElementById("doomReadout");
+const torchCountLabel = document.getElementById("torchCount");
+const treasureCountLabel = document.getElementById("treasureCount");
+const bestFloorLabel = document.getElementById("bestFloorLabel");
 const DEFAULT_READOUT_TEXT =
   "WASD or Arrow Keys to move and turn. Space or Click to fire. E to use a staircase.";
+const WIN_READOUT_TEXT =
+  "You reached the top floor! WASD or Arrow Keys to keep exploring.";
 
 const SCENE_THEME = {
   dark: {
@@ -466,6 +549,7 @@ const SCENE_THEME = {
     wallCell: "#2a3140",
     stairUpCell: "#ffb703",
     stairDownCell: "#9d4edd",
+    treasureCell: "#2ec4b6",
     ray: "rgba(0, 229, 255, 0.25)",
     player: "#00e5ff",
   },
@@ -477,6 +561,7 @@ const SCENE_THEME = {
     wallCell: "#ccd3dc",
     stairUpCell: "#e07a00",
     stairDownCell: "#7b2cbf",
+    treasureCell: "#0d9488",
     ray: "rgba(0, 119, 182, 0.25)",
     player: "#0077b6",
   },
@@ -587,9 +672,16 @@ function floorScreenY(halfHeight, correctedDistance) {
 function draw3DView(rays, theme) {
   const halfHeight = viewCanvas.height / 2;
   const level = levels[currentLevelIndex];
-  const stairMarkers = [
+  // Everything painted directly onto the floor plane (not wall-mounted)
+  // shares one rendering path — stairs and uncollected treasures alike —
+  // since "where does this ray cross this specific floor cell" is the
+  // same raySlabIntersect() question regardless of what's sitting there.
+  const floorMarkers = [
     level.upCell && { cell: level.upCell, color: theme.stairUpCell },
     level.downCell && { cell: level.downCell, color: theme.stairDownCell },
+    ...level.treasures
+      .filter((t) => !t.collected)
+      .map((t) => ({ cell: t, color: theme.treasureCell })),
   ].filter(Boolean);
 
   for (let i = 0; i < rays.length; i++) {
@@ -617,13 +709,13 @@ function draw3DView(rays, theme) {
     viewCtx.fillStyle = theme.floor;
     viewCtx.fillRect(i, wallTop + wallHeight, 1, halfHeight - wallHeight / 2);
 
-    // Stairs, painted directly onto the floor at their true position —
-    // only the portion of this ray's path that's both inside the stairs
+    // Floor markers (stairs, treasures), painted at their true position —
+    // only the portion of this ray's path that's both inside the marker's
     // cell AND in front of whatever wall it eventually hits.
     const rayDirX = Math.cos(ray.angle);
     const rayDirY = Math.sin(ray.angle);
     const cosCorrection = Math.cos(ray.angle - player.angle);
-    for (const marker of stairMarkers) {
+    for (const marker of floorMarkers) {
       const hitBounds = raySlabIntersect(
         player.x,
         player.y,
@@ -680,7 +772,7 @@ function draw3DView(rays, theme) {
         0.15,
         ray.correctedDistance - TORCH_STICKOUT,
       );
-      const cubeSize = (viewCanvas.height / stickOutDistance) * TORCH_WORLD_SIZE;
+      const cubeSize = (viewCanvas.height / stickOutDistance) * level.torchSize;
       const cubeTop = halfHeight - cubeSize / 2;
 
       // 0 at the torch's left edge, 1 at its right edge — used to darken
@@ -703,7 +795,6 @@ function draw3DView(rays, theme) {
 
 // --- Laser gun ---
 const TORCH_STICKOUT = 0.15; // world units — how far off the wall face a torch appears to sit
-const TORCH_WORLD_SIZE = 0.35; // world units — physical size of the torch cube
 const LASER_SPEED = 0.8; // world units per frame the projectile travels
 const LASER_BOLT_SIZE = 0.1; // world units — physical size of the traveling bolt
 
@@ -737,6 +828,7 @@ function checkLaserHitsTorch(hit, wallX) {
     if (Math.abs(torch.wallX - wallX) > MARK_HALF_WIDTH) continue;
     torch.lit = true;
   }
+  checkAllTorchesLit();
 }
 
 function fireLaser() {
@@ -965,6 +1057,20 @@ function drawMinimap(rays, theme) {
     minimapCtx.fill();
   }
 
+  for (const treasure of levels[currentLevelIndex].treasures) {
+    if (treasure.collected) continue;
+    minimapCtx.fillStyle = theme.treasureCell;
+    minimapCtx.beginPath();
+    minimapCtx.arc(
+      (treasure.col + 0.5) * MINIMAP_CELL,
+      (treasure.row + 0.5) * MINIMAP_CELL,
+      3,
+      0,
+      Math.PI * 2,
+    );
+    minimapCtx.fill();
+  }
+
   if (laserProjectile) {
     const x = laserProjectile.originX + Math.cos(laserProjectile.angle) * laserProjectile.traveled;
     const y = laserProjectile.originY + Math.sin(laserProjectile.angle) * laserProjectile.traveled;
@@ -999,9 +1105,20 @@ function updateReadout() {
     doomReadout.textContent = "Press E to go up to the next floor.";
   } else if (stairsHintType === "down") {
     doomReadout.textContent = "Press E to go down to the previous floor.";
+  } else if (currentLevelIndex === NUM_FLOORS - 1) {
+    doomReadout.textContent = WIN_READOUT_TEXT;
   } else {
     doomReadout.textContent = DEFAULT_READOUT_TEXT;
   }
+}
+
+function updateStatsDisplay() {
+  const level = levels[currentLevelIndex];
+  const litCount = level.torches.filter((t) => t.lit).length;
+  const collectedCount = level.treasures.filter((t) => t.collected).length;
+  torchCountLabel.textContent = `${litCount}/${level.torches.length}`;
+  treasureCountLabel.textContent = `${collectedCount}/${level.treasures.length}`;
+  bestFloorLabel.textContent = bestFloor > 0 ? bestFloor : "—";
 }
 
 function draw() {
@@ -1011,7 +1128,22 @@ function draw() {
   drawCrosshair(theme);
   drawMinimap(rays, theme);
   updateReadout();
+  updateStatsDisplay();
 }
+
+// Regenerates every floor from scratch (fresh walls, torches, treasures —
+// same procedure as page load) and drops the player back at floor 1.
+// bestFloor is deliberately left untouched — it's a persistent
+// high-water mark across playthroughs, not part of the current run, the
+// same way a game's "best score" survives starting a new game.
+document.getElementById("newGameButton").addEventListener("click", () => {
+  levels = [];
+  for (let i = 0; i < NUM_FLOORS; i++) levels.push(generateFloor(i));
+  currentLevelIndex = 0;
+  wallDecals = [];
+  laserProjectile = null;
+  enterCurrentLevel({ x: 1.5, y: 1.5, angle: 0 });
+});
 
 // --- Game loop ---
 // Unlike the site's other projects (which advance one discrete step per

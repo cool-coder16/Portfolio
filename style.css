@@ -625,6 +625,16 @@ canvas {
   font-size: 12px;
 }
 
+/* Small stat lines under Raycasting's minimap (torch/treasure counts,
+   best floor) — quieter than body text since they're a secondary status
+   readout, not the main instructions. */
+.sidebar-stats {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.6;
+  margin: 0;
+}
+
 /* Dims the whole row (not just the radio itself) while solving locks it. */
 .panel-item:has(input:disabled) {
   opacity: 0.5;

@@ -26,20 +26,26 @@
       <a href="projects.html">&larr; Back to Projects</a>
     </p>
 
-    <div class="page single-sidebar tight-gap">
+    <div class="page single-sidebar">
       <aside class="controls-panel sidebar-panel">
         <h2>Map — Floor <span id="floorLabel">1</span></h2>
         <canvas id="minimapCanvas" width="240" height="240"></canvas>
+        <p class="sidebar-stats">
+          Torches: <span id="torchCount">0/0</span><br />
+          Treasures: <span id="treasureCount">0/0</span>
+        </p>
+        <p class="sidebar-stats">
+          Best floor (all torches lit):
+          <span id="bestFloorLabel">—</span>
+        </p>
+        <button id="newGameButton" class="btn sidebar-btn">New Game</button>
       </aside>
 
       <main>
         <h1>Raycasting Mini-Doom</h1>
         <p>
-          A grid of walls turned into a pseudo-3D corridor view, the same
-          technique Wolfenstein 3D and the original DOOM used: cast one ray
-          per screen column, and however far it travels before hitting a
-          wall decides how tall that column's wall slice is drawn. Ten
-          floors, each randomly generated the moment the page loads.
+          A hand-written raycaster — the technique behind Wolfenstein 3D and
+          the original DOOM. Ten randomly generated floors to climb.
         </p>
 
         <canvas id="viewCanvas" width="640" height="400"></canvas>
