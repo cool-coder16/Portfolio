@@ -1145,6 +1145,49 @@ document.getElementById("newGameButton").addEventListener("click", () => {
   enterCurrentLevel({ x: 1.5, y: 1.5, angle: 0 });
 });
 
+// --- Account sync ---
+// Signing in itself happens through the site-wide modal auth.js injects
+// on every page — this page only needs to reflect the result of that (a
+// status line + Log Out) and sync its own save data. auth.js loads as an
+// ES module, which runs AFTER this classic script has already finished
+// executing — so window.PortfolioAuth doesn't exist yet at the top of
+// this file. "portfolio-auth-ready" fires once it's safe to use.
+window.addEventListener("portfolio-auth-ready", () => {
+  const authStatus = document.getElementById("authStatus");
+  const authUserEmail = document.getElementById("authUserEmail");
+
+  window.PortfolioAuth.onAuthChange(async (user) => {
+    if (user) {
+      authStatus.classList.remove("auth-hidden");
+      authUserEmail.textContent = user.email;
+      await syncBestFloorWithAccount();
+    } else {
+      authStatus.classList.add("auth-hidden");
+    }
+  });
+
+  document.getElementById("authLogoutButton").addEventListener("click", () => {
+    window.PortfolioAuth.logOut();
+  });
+});
+
+// Reconciles the local (localStorage) bestFloor against whatever's saved
+// on the signed-in account — whichever is higher wins, and gets copied to
+// the other side, so neither a fresh browser nor a fresh device ever
+// loses progress the other one already knows about.
+async function syncBestFloorWithAccount() {
+  const data = await window.PortfolioAuth.getUserData();
+  const cloudBestFloor = data?.raycastingBestFloor ?? 0;
+
+  if (cloudBestFloor > bestFloor) {
+    bestFloor = cloudBestFloor;
+    localStorage.setItem("raycastingBestFloor", String(bestFloor));
+  } else if (bestFloor > cloudBestFloor) {
+    await window.PortfolioAuth.saveUserData({ raycastingBestFloor: bestFloor });
+  }
+  updateStatsDisplay();
+}
+
 // --- Game loop ---
 // Unlike the site's other projects (which advance one discrete step per
 // button click), a first-person view needs to redraw continuously while
