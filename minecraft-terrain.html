@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Minecraft Terrain Generator</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <nav class="navbar">
+      <a href="index.html" class="nav-brand">
+        <img src="favicon.svg" alt="Logo" class="nav-logo" />
+        <span class="nav-title">Vivaan Loiwal</span>
+      </a>
+      <div class="nav-links">
+        <a href="index.html" class="nav-link">Home</a>
+        <div class="nav-item-dropdown">
+          <a href="projects.html" class="nav-link active">Projects</a>
+          <div class="dropdown-menu" id="navProjectsDropdown"></div>
+        </div>
+      </div>
+      <button id="themeToggle" class="btn theme-toggle">Light Mode</button>
+    </nav>
+
+    <p class="breadcrumb">
+      <a href="projects.html">&larr; Back to Projects</a>
+    </p>
+
+    <div class="page single-sidebar tight-gap">
+      <aside class="controls-panel sidebar-panel">
+        <h2>Setup</h2>
+
+        <div class="slider-item">
+          <label for="sizeInput"
+            >Size: <span id="sizeValue">18×18</span></label
+          >
+          <input
+            type="range"
+            id="sizeInput"
+            min="10"
+            max="30"
+            step="2"
+            value="18"
+          />
+        </div>
+
+        <div class="slider-item">
+          <label for="roughnessInput"
+            >Roughness: <span id="roughnessValue">0.15</span></label
+          >
+          <input
+            type="range"
+            id="roughnessInput"
+            min="0.05"
+            max="0.35"
+            step="0.01"
+            value="0.15"
+          />
+        </div>
+
+        <div class="biome-stack-panel">
+          <label class="biome-stack-label"
+            >Biomes
+            <span class="biome-stack-hint">(drag to reorder)</span></label
+          >
+          <ul id="biomeStackList" class="biome-stack"></ul>
+          <button id="biomeResetButton" class="btn biome-reset-btn">
+            Reset
+          </button>
+        </div>
+      </aside>
+
+      <main>
+        <h1>Minecraft Terrain Generator</h1>
+        <p>
+          A heightmap turned into stacked isometric blocks, using
+          hand-written 2D Perlin noise so nearby columns rise and fall
+          smoothly instead of looking like random static.
+        </p>
+
+        <canvas id="terrainCanvas" width="680" height="480"></canvas>
+
+        <p id="terrainReadout" class="readout">
+          Hand-written 2D Perlin noise, remapped into block heights — hit
+          Generate for a new seed.
+        </p>
+
+        <div class="controls">
+          <button id="regenerateButton" class="btn">Generate</button>
+        </div>
+      </main>
+
+      <div class="sidebar-spacer" aria-hidden="true"></div>
+    </div>
+
+    <script src="projects-data.js"></script>
+    <script src="nav.js"></script>
+    <script src="minecraft-terrain.js"></script>
+  </body>
+</html>

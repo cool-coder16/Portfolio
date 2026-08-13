@@ -50,6 +50,12 @@ const PROJECTS = [
     description:
       "A rectangle recursively splits into smaller ones, each leaf becomes a room, and a hand-written algorithm connects them all with corridors — Binary Space Partitioning, the technique behind a lot of real roguelike dungeon generators. Step through the split one node at a time, or watch it generate. Work in progress.",
   },
+  {
+    name: "Minecraft Terrain Generator",
+    url: "minecraft-terrain.html",
+    description:
+      "A grid of isometric blocks stacked into hills and valleys with hand-written 2D Perlin noise, so the terrain rises and falls smoothly instead of looking like random static — Minecraft-style, right down to the blocky shading and a drag-to-reorder stack of biome colors. Hit Generate for a new seed. Work in progress.",
+  },
 ];
 
 // Fills in the navbar's Projects dropdown, if this page has one.

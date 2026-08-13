@@ -550,6 +550,81 @@ canvas {
   width: 100%;
 }
 
+/* --- Biome stack (Minecraft Terrain Generator) --- */
+.biome-stack-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  font-size: 14px;
+}
+
+.biome-stack-hint {
+  font-size: 11px;
+  color: var(--text);
+  opacity: 0.6;
+}
+
+.biome-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.biome-stack-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 4px;
+  cursor: grab;
+}
+
+.biome-stack-row.dragging {
+  opacity: 0.4;
+}
+
+.biome-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: 1px solid var(--panel-border);
+  flex-shrink: 0;
+}
+
+.biome-stack-name {
+  flex: 1;
+  color: var(--text);
+}
+
+.biome-level-input {
+  width: 40px;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 4px;
+  padding: 3px 4px;
+  text-align: center;
+}
+
+/* Smaller/full-width variant of .btn so Reset fits the narrow sidebar
+   instead of using the default padding tuned for buttons under the
+   canvas. */
+.biome-reset-btn {
+  width: 100%;
+  padding: 6px 12px;
+  margin-top: 4px;
+  font-size: 12px;
+}
+
 /* Dims the whole row (not just the radio itself) while solving locks it. */
 .panel-item:has(input:disabled) {
   opacity: 0.5;
