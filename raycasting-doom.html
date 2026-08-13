@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Raycasting Mini-Doom</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <nav class="navbar">
+      <a href="index.html" class="nav-brand">
+        <img src="favicon.svg" alt="Logo" class="nav-logo" />
+        <span class="nav-title">Vivaan Loiwal</span>
+      </a>
+      <div class="nav-links">
+        <a href="index.html" class="nav-link">Home</a>
+        <div class="nav-item-dropdown">
+          <a href="projects.html" class="nav-link active">Projects</a>
+          <div class="dropdown-menu" id="navProjectsDropdown"></div>
+        </div>
+      </div>
+      <button id="themeToggle" class="btn theme-toggle">Light Mode</button>
+    </nav>
+
+    <p class="breadcrumb">
+      <a href="projects.html">&larr; Back to Projects</a>
+    </p>
+
+    <div class="page single-sidebar tight-gap">
+      <aside class="controls-panel sidebar-panel">
+        <h2>Map — Floor <span id="floorLabel">1</span></h2>
+        <canvas id="minimapCanvas" width="240" height="240"></canvas>
+      </aside>
+
+      <main>
+        <h1>Raycasting Mini-Doom</h1>
+        <p>
+          A grid of walls turned into a pseudo-3D corridor view, the same
+          technique Wolfenstein 3D and the original DOOM used: cast one ray
+          per screen column, and however far it travels before hitting a
+          wall decides how tall that column's wall slice is drawn. Ten
+          floors, each randomly generated the moment the page loads.
+        </p>
+
+        <canvas id="viewCanvas" width="640" height="400"></canvas>
+
+        <p id="doomReadout" class="readout">
+          WASD or Arrow Keys to move and turn. Space or Click to fire. E to
+          use a staircase.
+        </p>
+      </main>
+
+      <div class="sidebar-spacer" aria-hidden="true"></div>
+    </div>
+
+    <script src="projects-data.js"></script>
+    <script src="nav.js"></script>
+    <script src="raycasting-doom.js"></script>
+  </body>
+</html>

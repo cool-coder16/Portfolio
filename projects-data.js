@@ -56,6 +56,12 @@ const PROJECTS = [
     description:
       "A grid of isometric blocks stacked into hills and valleys with hand-written 2D Perlin noise, so the terrain rises and falls smoothly instead of looking like random static — Minecraft-style, right down to the blocky shading and a drag-to-reorder stack of biome colors. Hover a block to see its height and biome, or hit Generate for a new seed.",
   },
+  {
+    name: "Raycasting Mini-Doom",
+    url: "raycasting-doom.html",
+    description:
+      "A grid of walls turned into a pseudo-3D corridor view with a hand-written raycaster — the same core technique Wolfenstein 3D and the original DOOM used. Ten randomly generated floors to climb via staircases, wall-mounted torches to light up with a mouse-aimed laser, and a minimap that shows exactly where every ray and shot actually landed. Work in progress.",
+  },
 ];
 
 // Fills in the navbar's Projects dropdown, if this page has one.

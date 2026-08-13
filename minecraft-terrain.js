@@ -505,7 +505,9 @@ function renderBiomeStack() {
     input.className = "biome-level-input";
     input.min = index === 0 ? 0 : biomeLevels[index - 1] + 1;
     input.max =
-      index === biomeLevels.length - 1 ? MAX_HEIGHT : biomeLevels[index + 1] - 1;
+      index === biomeLevels.length - 1
+        ? MAX_HEIGHT
+        : biomeLevels[index + 1] - 1;
     input.value = biomeLevels[index];
     input.addEventListener("input", () => {
       biomeLevels[index] = clampBiomeLevel(index, Number(input.value));

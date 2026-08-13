@@ -615,10 +615,10 @@ canvas {
   text-align: center;
 }
 
-/* Smaller/full-width variant of .btn so Reset fits the narrow sidebar
-   instead of using the default padding tuned for buttons under the
-   canvas. */
-.biome-reset-btn {
+/* Smaller/full-width variant of .btn so a button fits a narrow sidebar
+   (e.g. Minecraft Terrain's Reset, Raycasting's Randomize) instead of
+   using the default padding tuned for buttons under the canvas. */
+.sidebar-btn {
   width: 100%;
   padding: 6px 12px;
   margin-top: 4px;
