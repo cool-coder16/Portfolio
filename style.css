@@ -45,32 +45,41 @@ body {
 }
 
 /* --- Navbar --- */
-/* Shared across all pages. The theme toggle lives inside it (on the right,
-   via justify-content: space-between) instead of being separately
-   fixed-positioned, so it can't ever overlap page content. */
+/* Shared across all pages. Three columns — [brand] [nav-links] [actions]
+   — sized 1fr auto 1fr so nav-links sits at the navbar's true visual
+   center, not just "the leftover space between the other two." A plain
+   flex row with justify-content: space-between LOOKS similar but isn't
+   the same thing: it centers nav-links only when the brand and actions
+   sections happen to be equally wide, and drifts off-true-center
+   whenever they aren't (which they aren't here — the brand's logo+title
+   is a different width than the theme/login buttons). Grid's 1fr columns
+   stay equal regardless of what's inside brand/actions, which is what
+   actually pins nav-links to center. align-items: center handles the
+   vertical alignment across all three columns the same way flex's
+   align-items would. */
 .navbar {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
   padding: 14px 24px;
   border-bottom: 1px solid var(--panel-border);
 }
 
-/* Groups the theme toggle and login button as ONE flex child of .navbar,
-   sitting together in the corner — without this wrapper, space-between
-   would treat them as two separate children and spread all four items
-   (logo, nav-links, theme toggle, login) evenly across the row instead,
-   pushing nav-links off-center and splitting the two buttons apart. */
+/* Groups the theme toggle and login button as one grid child, so both
+   sit together in the corner instead of the grid trying to place them as
+   two separate columns. */
 .nav-actions {
   display: flex;
   align-items: center;
   gap: 12px;
+  justify-self: end;
 }
 
 .nav-links {
   display: flex;
   align-items: center;
   gap: 20px;
+  justify-self: center;
 }
 
 .nav-link {
@@ -113,6 +122,7 @@ body {
   gap: 10px;
   text-decoration: none;
   color: var(--text);
+  justify-self: start;
 }
 
 .nav-logo {
