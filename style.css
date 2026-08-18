@@ -759,6 +759,96 @@ canvas {
   display: none;
 }
 
+/* --- Account page --- */
+.account-page {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.account-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: min(360px, calc(100vw - 32px));
+  padding: 32px;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+}
+
+/* .account-panel's own display: flex has the SAME specificity as
+   .auth-hidden's display: none (both single classes) — whichever rule
+   comes later in the stylesheet would otherwise win regardless of which
+   one actually applies. This compound selector (two classes together) is
+   more specific than either alone, so a hidden panel stays hidden
+   regardless of source order — same technique .auth-modal-overlay.auth-
+   hidden already uses above. */
+.account-panel.auth-hidden {
+  display: none;
+}
+
+.account-panel h1 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.account-hint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text);
+  opacity: 0.75;
+  text-align: center;
+}
+
+.account-avatar-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Shows the uploaded photo (via background-image, set in accounts.js) or
+   falls back to the first letter of the username/email when there isn't
+   one yet — never an empty gray circle. */
+.account-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background-color: var(--bg);
+  background-size: cover;
+  background-position: center;
+  border: 2px solid var(--panel-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  color: var(--accent);
+}
+
+/* The real <input type="file"> is invisible; the "Change Picture" <label
+   for="accountPictureInput"> above it (styled as a normal .btn) is what's
+   actually shown and clicked — a label's `for` attribute opens its
+   input's file picker natively, no JS click-forwarding needed. */
+.account-file-input {
+  display: none;
+}
+
+.account-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.account-field label {
+  font-size: 13px;
+  color: var(--text);
+  opacity: 0.75;
+}
+
 /* Dims the whole row (not just the radio itself) while solving locks it. */
 .panel-item:has(input:disabled) {
   opacity: 0.5;

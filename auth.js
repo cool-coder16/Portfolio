@@ -24,6 +24,12 @@ import {
   getDoc,
   setDoc,
 } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+import {
+  getStorage,
+  ref,
+  uploadBytes,
+  getDownloadURL,
+} from "https://www.gstatic.com/firebasejs/12.17.1/firebase-storage.js";
 
 // This config is meant to be public — it identifies which Firebase
 // project to talk to, not a secret. The actual protection is the
@@ -41,6 +47,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const storage = getStorage(app);
 
 let currentUser = null;
 const authChangeListeners = [];
@@ -79,6 +86,21 @@ async function getUserData() {
 async function saveUserData(partialData) {
   if (!currentUser) return;
   await setDoc(doc(db, "users", currentUser.uid), partialData, { merge: true });
+}
+
+// Uploads a picture to Storage under a path only this user can write to
+// (profile-pictures/{uid}/...), then saves the resulting public download
+// URL onto their Firestore document — Storage holds the actual file
+// bytes, Firestore just remembers where to find it, the standard split
+// between the two services (Firestore documents aren't meant to hold
+// large binary blobs directly).
+async function uploadProfilePicture(file) {
+  if (!currentUser) return null;
+  const fileRef = ref(storage, `profile-pictures/${currentUser.uid}/${file.name}`);
+  await uploadBytes(fileRef, file);
+  const photoURL = await getDownloadURL(fileRef);
+  await saveUserData({ photoURL });
+  return photoURL;
 }
 
 // --- Sign-in modal ---
@@ -197,7 +219,7 @@ const authNavButton = setupNavButton(authModalOverlay);
 // scripts react to via onAuthChange() below, rather than each one having
 // to duplicate this listener. Also the one place deciding whether the
 // sign-in modal should be showing and what the navbar button reads.
-onAuthStateChanged(auth, (user) => {
+onAuthStateChanged(auth, async (user) => {
   currentUser = user;
   for (const listener of authChangeListeners) listener(user);
 
@@ -205,10 +227,17 @@ onAuthStateChanged(auth, (user) => {
   authModalOverlay.classList.toggle("auth-hidden", Boolean(user) || isGuest);
 
   if (authNavButton) {
-    // Firebase email/password auth has no separate "username" field —
-    // the part of the email before @ stands in for one, since showing
-    // the full address in a small nav button reads as cluttered.
-    authNavButton.textContent = user ? user.email.split("@")[0] : "Login";
+    if (user) {
+      // Prefer the username saved on the Accounts page; Firebase
+      // email/password auth has no separate username field of its own,
+      // so until one's been set, the part of the email before @ stands
+      // in for it — showing the full address in a small nav button reads
+      // as cluttered.
+      const data = await getUserData();
+      authNavButton.textContent = data?.username || user.email.split("@")[0];
+    } else {
+      authNavButton.textContent = "Login";
+    }
   }
 });
 
@@ -219,6 +248,7 @@ window.PortfolioAuth = {
   getCurrentUser: () => currentUser,
   getUserData,
   saveUserData,
+  uploadProfilePicture,
   // Registers a callback that runs immediately with the current user (or
   // null), then again on every future sign-up/log-in/log-out.
   onAuthChange: (callback) => {

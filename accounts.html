@@ -26,12 +26,48 @@
       </div>
     </nav>
 
-    <!-- Intentionally empty for now — this page will hold account details
-         (progress across projects, etc.) once that's designed. -->
-    <main class="page"></main>
+    <main class="account-page">
+      <div id="accountLoggedOut" class="account-panel">
+        <h1>Account</h1>
+        <p class="account-hint">Log in to view and edit your profile.</p>
+        <button id="accountLoginButton" class="btn">Log In</button>
+      </div>
+
+      <div id="accountLoggedIn" class="account-panel auth-hidden">
+        <h1>Account</h1>
+
+        <div class="account-avatar-wrap">
+          <div id="accountAvatar" class="account-avatar"></div>
+          <label for="accountPictureInput" class="btn">Change Picture</label>
+          <input
+            type="file"
+            id="accountPictureInput"
+            class="account-file-input"
+            accept="image/*"
+          />
+          <p id="accountUploadStatus" class="account-hint"></p>
+        </div>
+
+        <div class="account-field">
+          <label for="accountUsernameInput">Username</label>
+          <input
+            type="text"
+            id="accountUsernameInput"
+            class="auth-input"
+            placeholder="Choose a username"
+          />
+          <button id="accountSaveUsernameButton" class="btn">Save</button>
+        </div>
+
+        <p class="account-hint">
+          Signed in as <span id="accountEmailDisplay"></span>
+        </p>
+      </div>
+    </main>
 
     <script src="projects-data.js"></script>
     <script src="nav.js"></script>
+    <script src="accounts.js"></script>
     <script type="module" src="auth.js"></script>
   </body>
 </html>
