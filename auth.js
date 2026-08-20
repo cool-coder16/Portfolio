@@ -273,6 +273,48 @@ function buildAuthModal() {
     overlay.classList.add("auth-hidden");
   });
 
+  // Keyboard support: Escape dismisses the modal the same way clicking
+  // "Continue without logging in" does — just hiding it without setting
+  // the guest flag would bring it right back on the next page load, which
+  // would make Escape feel like it didn't actually do anything. Tab is
+  // trapped inside the modal's own inputs/buttons while it's open, so
+  // keyboard users can't accidentally tab into the page content sitting
+  // (invisibly, but still in the DOM) behind the overlay.
+  const focusableSelector = "input, button:not(:disabled)";
+
+  document.addEventListener("keydown", (e) => {
+    if (overlay.classList.contains("auth-hidden")) return;
+
+    if (e.key === "Escape") {
+      guestButton.click();
+      return;
+    }
+
+    if (e.key === "Tab") {
+      const focusable = Array.from(modal.querySelectorAll(focusableSelector));
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  });
+
+  // Whenever the modal goes from hidden to visible — on first page load,
+  // or reopened later via the Accounts page's Log In button — send focus
+  // straight to the email field, so keyboard users don't have to Tab past
+  // the whole page to reach it first.
+  new MutationObserver(() => {
+    if (!overlay.classList.contains("auth-hidden")) {
+      emailInput.focus();
+    }
+  }).observe(overlay, { attributes: true, attributeFilter: ["class"] });
+
   return overlay;
 }
 
