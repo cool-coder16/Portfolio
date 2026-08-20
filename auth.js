@@ -25,6 +25,7 @@ import {
   getDoc,
   setDoc,
 } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-analytics.js";
 
 // This config is meant to be public — it identifies which Firebase
 // project to talk to, not a secret. The actual protection is the
@@ -37,11 +38,17 @@ const firebaseConfig = {
   storageBucket: "portfolio-f4bb7.firebasestorage.app",
   messagingSenderId: "1030427566587",
   appId: "1:1030427566587:web:5658699f65c7bb7585eb5e",
+  measurementId: "G-NHNDXKVCJT",
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+// Google Analytics (via Firebase) — once initialized, it automatically
+// logs page views with no further calls needed. Not assigned to anything
+// used elsewhere in this file, but getAnalytics(app) itself is what turns
+// tracking on, so it still has to run.
+getAnalytics(app);
 
 let currentUser = null;
 const authChangeListeners = [];
