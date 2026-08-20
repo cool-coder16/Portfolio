@@ -351,6 +351,16 @@ canvas {
   box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
 }
 
+/* Used while an auth request (login/signup/password reset) is in flight,
+   so the "Please wait…" state also looks visually inactive, not just
+   unclickable. */
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+  background: transparent;
+  box-shadow: none;
+}
+
 /* :active = the moment the button is actually being pressed/clicked. */
 .btn:active {
   background: var(--btn-active-bg);
@@ -738,6 +748,40 @@ canvas {
   min-height: 14px;
 }
 
+/* Same element as .auth-error (the modal reuses one line for both errors
+   and confirmations, like "password reset email sent") — this modifier
+   just swaps the color from red to the theme accent for good news. */
+.auth-error.auth-success {
+  color: var(--accent);
+}
+
+/* Right-aligned, smaller and quieter than the Log In/Sign Up buttons since
+   it's a secondary action — sits directly under the password field it
+   relates to. */
+.auth-forgot-link {
+  align-self: flex-end;
+  margin-top: -4px;
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--text);
+  opacity: 0.65;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+}
+
+.auth-forgot-link:hover {
+  opacity: 1;
+}
+
+.auth-forgot-link:disabled {
+  opacity: 0.3;
+  cursor: default;
+  text-decoration: none;
+}
+
 .auth-guest-link {
   align-self: center;
   background: none;
@@ -1090,4 +1134,71 @@ canvas {
   margin: 0;
   font-size: 14px;
   line-height: 1.5;
+}
+
+/* --- Mobile responsiveness ---
+   Everything above this point was designed for a desktop-width window. At
+   narrow widths (roughly phone/small-tablet size), two things break: the
+   navbar's three-column grid gets squeezed too tight, and the
+   canvas-plus-sidebars page layouts (grid or flex, depending on the page —
+   see .page above) have no room to sit side by side. Rather than redesign
+   each canvas project's layout individually, this collapses ALL of them to
+   one shared pattern: everything stacks in a single centered column, in
+   the same top-to-bottom order it already exists in the HTML. */
+@media (max-width: 700px) {
+  .navbar {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+  }
+
+  .nav-brand,
+  .nav-actions {
+    justify-self: center;
+  }
+
+  .nav-links {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 900px) {
+  /* Overrides the grid/flex layouts above regardless of which variant a
+     given page uses (.page, .page.stacked-layout, .page.single-sidebar all
+     lay out differently on desktop) — at this width they all become the
+     same simple stacked column instead. */
+  .page,
+  .page.stacked-layout,
+  .page.single-sidebar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding: 20px 12px;
+  }
+
+  /* This existed only to keep .page.single-sidebar's canvas centered by
+     "balancing" the real sidebar's width on the opposite side — with
+     everything stacked in one column now, there's nothing left to balance
+     and it would just show up as empty space. */
+  .sidebar-spacer {
+    display: none;
+  }
+
+  .page.tight-gap .controls-panel {
+    left: 0;
+  }
+
+  /* Several projects' canvases have a fixed pixel width wider than a phone
+     screen (e.g. the maze, raycasting, rhythm trainer). Scaling the canvas
+     itself down with CSS would make it blurry and throw off mouse-click
+     math that assumes 1 canvas pixel = 1 CSS pixel, so instead this lets
+     you scroll sideways to reach the full canvas rather than either
+     breaking clicks or overflowing the whole page. */
+  .page main {
+    max-width: 100%;
+    overflow-x: auto;
+  }
 }

@@ -13,7 +13,9 @@ window.addEventListener("portfolio-auth-ready", () => {
     "accountSaveUsernameButton",
   );
   const emailDisplay = document.getElementById("accountEmailDisplay");
+  const memberSince = document.getElementById("accountMemberSince");
   const loginButton = document.getElementById("accountLoginButton");
+  const logoutButton = document.getElementById("accountLogoutButton");
 
   // Tracked here (not just read off the DOM) so saving a new username
   // doesn't have to guess whether a picture is already set — without
@@ -44,6 +46,11 @@ window.addEventListener("portfolio-auth-ready", () => {
     loggedInPanel.classList.remove("auth-hidden");
     emailDisplay.textContent = user.email;
 
+    // Firebase tracks account-creation time on the user object itself — no
+    // Firestore read needed for this one.
+    const createdDate = new Date(user.metadata.creationTime);
+    memberSince.textContent = `Member since ${createdDate.toLocaleDateString(undefined, { year: "numeric", month: "long" })}`;
+
     const data = await window.PortfolioAuth.getUserData();
     usernameInput.value = data?.username || "";
     photoURL = data?.photoURL || null;
@@ -56,11 +63,15 @@ window.addEventListener("portfolio-auth-ready", () => {
       .classList.remove("auth-hidden");
   });
 
+  logoutButton.addEventListener("click", () => {
+    window.PortfolioAuth.logOut();
+  });
+
   pictureInput.addEventListener("change", async () => {
     const file = pictureInput.files[0];
     if (!file) return;
 
-    uploadStatus.textContent = "Uploading…";
+    uploadStatus.textContent = "Saving…";
     try {
       photoURL = await window.PortfolioAuth.uploadProfilePicture(file);
       renderAvatar();

@@ -17,6 +17,7 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
+  sendPasswordResetEmail,
 } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-auth.js";
 import {
   getFirestore,
@@ -24,12 +25,6 @@ import {
   getDoc,
   setDoc,
 } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
-import {
-  getStorage,
-  ref,
-  uploadBytes,
-  getDownloadURL,
-} from "https://www.gstatic.com/firebasejs/12.17.1/firebase-storage.js";
 
 // This config is meant to be public — it identifies which Firebase
 // project to talk to, not a secret. The actual protection is the
@@ -47,7 +42,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const storage = getStorage(app);
 
 let currentUser = null;
 const authChangeListeners = [];
@@ -59,6 +53,32 @@ async function signUp(email, password) {
 
 async function logIn(email, password) {
   await signInWithEmailAndPassword(auth, email, password);
+}
+
+async function resetPassword(email) {
+  await sendPasswordResetEmail(auth, email);
+}
+
+// Firebase's raw error messages (e.g. "Firebase: Error (auth/wrong-password).")
+// are meant for developers, not the person typing in the modal. This maps
+// the error codes we're actually likely to see to plain English; anything
+// not listed here falls back to a generic message rather than showing the
+// raw Firebase text.
+const AUTH_ERROR_MESSAGES = {
+  "auth/invalid-email": "That doesn't look like a valid email address.",
+  "auth/missing-email": "Enter your email above first, then click Forgot password.",
+  "auth/user-not-found": "No account found with that email.",
+  "auth/wrong-password": "Incorrect password.",
+  "auth/invalid-credential": "Incorrect email or password.",
+  "auth/email-already-in-use": "An account with that email already exists.",
+  "auth/weak-password": "Password must be at least 6 characters.",
+  "auth/missing-password": "Please enter a password.",
+  "auth/too-many-requests": "Too many attempts — please wait a bit and try again.",
+  "auth/network-request-failed": "Network error — check your connection and try again.",
+};
+
+function friendlyAuthError(err) {
+  return AUTH_ERROR_MESSAGES[err.code] || "Something went wrong. Please try again.";
 }
 
 // Clears the "continue without logging in" choice too — an intentional
@@ -88,19 +108,47 @@ async function saveUserData(partialData) {
   await setDoc(doc(db, "users", currentUser.uid), partialData, { merge: true });
 }
 
-// Uploads a picture to Storage under a path only this user can write to
-// (profile-pictures/{uid}/...), then saves the resulting public download
-// URL onto their Firestore document — Storage holds the actual file
-// bytes, Firestore just remembers where to find it, the standard split
-// between the two services (Firestore documents aren't meant to hold
-// large binary blobs directly).
+// Firebase Storage (for holding the actual uploaded file) now needs the
+// paid Blaze plan even for tiny amounts of usage, so instead of uploading
+// anywhere, this shrinks the picture down in the browser and saves it
+// directly as a compressed, base64-encoded data URL — a plain text string
+// — right on the user's Firestore document, the same free document every
+// other saved field (username, etc.) already lives on. Firestore caps a
+// document at 1MB total, which is why resizing it down first matters: a
+// full-size photo would blow way past that, but a small compressed JPEG
+// comfortably fits with room to spare.
 async function uploadProfilePicture(file) {
   if (!currentUser) return null;
-  const fileRef = ref(storage, `profile-pictures/${currentUser.uid}/${file.name}`);
-  await uploadBytes(fileRef, file);
-  const photoURL = await getDownloadURL(fileRef);
+  const photoURL = await shrinkImageToDataURL(file);
   await saveUserData({ photoURL });
   return photoURL;
+}
+
+// Loads the file into an <img>, draws it onto a small canvas (scaled down,
+// keeping its aspect ratio), and reads that back out as a compressed JPEG
+// data URL. The avatar itself only ever displays at 96px, so 128px source
+// is already more detail than it needs.
+function shrinkImageToDataURL(file, maxSize = 128, quality = 0.8) {
+  return new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file);
+    const img = new Image();
+
+    img.onload = () => {
+      const scale = Math.min(maxSize / img.width, maxSize / img.height, 1);
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      URL.revokeObjectURL(objectUrl);
+      resolve(canvas.toDataURL("image/jpeg", quality));
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("Couldn't read that image file."));
+    };
+    img.src = objectUrl;
+  });
 }
 
 // --- Sign-in modal ---
@@ -135,6 +183,11 @@ function buildAuthModal() {
   passwordInput.placeholder = "Password";
   passwordInput.autocomplete = "current-password";
 
+  const forgotButton = document.createElement("button");
+  forgotButton.type = "button";
+  forgotButton.className = "auth-forgot-link";
+  forgotButton.textContent = "Forgot password?";
+
   const buttonRow = document.createElement("div");
   buttonRow.className = "auth-buttons";
   const loginButton = document.createElement("button");
@@ -145,8 +198,8 @@ function buildAuthModal() {
   signupButton.textContent = "Sign Up";
   buttonRow.append(loginButton, signupButton);
 
-  const error = document.createElement("p");
-  error.className = "auth-error";
+  const message = document.createElement("p");
+  message.className = "auth-error";
 
   const guestButton = document.createElement("button");
   guestButton.className = "auth-guest-link";
@@ -157,30 +210,56 @@ function buildAuthModal() {
     hint,
     emailInput,
     passwordInput,
+    forgotButton,
     buttonRow,
-    error,
+    message,
     guestButton,
   );
   overlay.appendChild(modal);
   document.body.appendChild(overlay);
 
-  loginButton.addEventListener("click", async () => {
-    error.textContent = "";
+  // Shared by every button below so a click can't be double-submitted (both
+  // buttons disable together) and so whichever one was clicked shows
+  // "Please wait…" while its Firebase request is in flight — without this,
+  // a slow connection just looks like the click did nothing.
+  async function runAuthAction(button, action) {
+    message.classList.remove("auth-success");
+    message.textContent = "";
+    const originalText = button.textContent;
+    loginButton.disabled = true;
+    signupButton.disabled = true;
+    forgotButton.disabled = true;
+    button.textContent = "Please wait…";
     try {
-      await logIn(emailInput.value, passwordInput.value);
+      await action();
     } catch (err) {
-      error.textContent = err.message;
+      message.textContent = friendlyAuthError(err);
+    } finally {
+      loginButton.disabled = false;
+      signupButton.disabled = false;
+      forgotButton.disabled = false;
+      button.textContent = originalText;
     }
-  });
+  }
 
-  signupButton.addEventListener("click", async () => {
-    error.textContent = "";
-    try {
-      await signUp(emailInput.value, passwordInput.value);
-    } catch (err) {
-      error.textContent = err.message;
-    }
-  });
+  loginButton.addEventListener("click", () =>
+    runAuthAction(loginButton, () => logIn(emailInput.value, passwordInput.value)),
+  );
+
+  signupButton.addEventListener("click", () =>
+    runAuthAction(signupButton, () => signUp(emailInput.value, passwordInput.value)),
+  );
+
+  forgotButton.addEventListener("click", () =>
+    runAuthAction(forgotButton, async () => {
+      if (!emailInput.value) {
+        throw { code: "auth/missing-email" };
+      }
+      await resetPassword(emailInput.value);
+      message.classList.add("auth-success");
+      message.textContent = "Password reset email sent — check your inbox.";
+    }),
+  );
 
   guestButton.addEventListener("click", () => {
     localStorage.setItem(GUEST_FLAG_KEY, "true");
@@ -194,24 +273,25 @@ const authModalOverlay = buildAuthModal();
 
 // --- Navbar button ---
 // Every page's navbar has one of these next to the theme toggle — shows
-// "Login" (opens the same modal Continue-without-login would otherwise
-// dismiss) when signed out, or the account's name when signed in
-// (clicking it then logs out, the common "click your name to leave"
-// pattern). Guarded with a null check in case some future page's nav
-// doesn't include the button.
-function setupNavButton(overlay) {
+// "Login" when signed out or the account's name when signed in. Either
+// way, clicking it just goes to the Accounts page (accounts.html), which
+// has its own Log In button and — once signed in — a Log Out button. This
+// is simpler than the button doing different things (open a modal vs. log
+// out) depending on state, and matches the usual "click your name to see
+// your profile" pattern. Guarded with a null check in case some future
+// page's nav doesn't include the button.
+function setupNavButton() {
   const button = document.getElementById("authNavButton");
   if (!button) return null;
 
   button.addEventListener("click", () => {
-    if (currentUser) logOut();
-    else overlay.classList.remove("auth-hidden");
+    window.location.href = "accounts.html";
   });
 
   return button;
 }
 
-const authNavButton = setupNavButton(authModalOverlay);
+const authNavButton = setupNavButton();
 
 // Fires once immediately on page load with whatever session Firebase
 // finds persisted in this browser (or null), and again any time
